@@ -25,6 +25,9 @@
 
 *{box-sizing:border-box;}
 body{margin:0;font-family:'Segoe UI', Arial, sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+body.modal-open{overflow:hidden;overscroll-behavior:none;}
+body.modal-open .container{touch-action:none;}
+
 
 header{
   padding:20px 15px;
@@ -259,10 +262,12 @@ button:hover{
   background:rgba(0,0,0,0.85);
   display:none;
   justify-content:center;
-  align-items:center;
+  align-items:flex-start;
   z-index:1000;
   padding:15px;
   overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
 }
 
 .modal-content{
@@ -272,9 +277,14 @@ button:hover{
   width:100%;
   max-width:750px;
   border:1px solid var(--gold);
-  max-height:90vh;
+  max-height:calc(100vh - 30px);
+  max-height:calc(100dvh - 30px);
   overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
   position:relative;
+  margin:auto;
 }
 
 .close-modal{
@@ -632,13 +642,7 @@ button:hover{
 
     <!-- ADMIN LOGIN -->
     <div id="adminAuthBox">
-      <p style="color:var(--muted);">প্রথমবার ব্যবহারের আগে Supabase Project URL ও Publishable/anon key দিন এবং সংরক্ষণ করুন। এরপর Supabase Auth-এ তৈরি করা অনুমোদিত অ্যাডমিন ইমেইল ও পাসওয়ার্ড দিয়ে প্রবেশ করুন।</p>
-      <label>Supabase Project URL</label>
-      <input id="supabaseUrl" type="url" placeholder="https://xxxxxxxx.supabase.co">
-      <label>Supabase Publishable key / anon public key</label>
-      <textarea id="supabaseAnonKey" rows="3" placeholder="sb_publishable_... অথবা legacy anon public key"></textarea>
-      <button class="btn-secondary" onclick="saveCloudSettings()"><i class="fa-solid fa-cloud-arrow-up"></i> Supabase সংযোগ সংরক্ষণ করুন</button>
-      <hr style="border-color:var(--border);margin:15px 0;">
+      <p style="color:var(--muted);">দোকানের ক্লাউড ডাটাবেস স্বয়ংক্রিয়ভাবে সংযুক্ত থাকে। Supabase Auth-এ তৈরি করা অনুমোদিত অ্যাডমিন ইমেইল ও পাসওয়ার্ড দিয়ে প্রবেশ করুন।</p>
       <input type="email" id="adminEmail" placeholder="Admin Email" autocomplete="username">
       <input type="password" id="adminPass" placeholder="Admin Password" autocomplete="current-password">
       <button onclick="adminLogin()"><i class="fa-solid fa-key"></i> নিরাপদ অ্যাডমিন লগইন</button>
@@ -870,20 +874,9 @@ button:hover{
 
           <p style="color:var(--muted);font-size:13px;">Supabase Project URL ও Publishable/anon key অ্যাডমিন লগইন বক্সে প্রথমবার সেটআপ করা হয়। পরিবর্তন করতে লগইন বক্সে গিয়ে সংযোগ তথ্য আপডেট করুন। service_role/secret key কখনো ব্যবহার করবেন না।</p>
 
-          <label style="color:var(--gold);font-weight:bold;">২. Telegram Bot Live Order Notification (কাস্টমার অর্ডার করলে সরাসরি মোবাইলে মেসেজ আসবে):</label>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:180px;">
-              <label style="font-size:12px;color:var(--muted);">Telegram Bot Token:</label>
-              <input id="telegramBotToken" placeholder="123456789:ABCDefgh...">
-            </div>
-            <div style="flex:1;min-width:140px;">
-              <label style="font-size:12px;color:var(--muted);">Your Telegram Chat ID:</label>
-              <input id="telegramChatId" placeholder="987654321">
-            </div>
-          </div>
-          <small style="color:var(--muted);display:block;margin-bottom:12px;">টেলিগ্রাম নিয়ম: BotFather থেকে Bot বানিয়ে Chat ID পেতে @userinfobot এ মেসেজ দিন।</small>
-
-          <p style="color:var(--muted);font-size:13px;margin-top:10px;">Supabase সংযোগের তথ্য অ্যাডমিন লগইন বক্স থেকে সংরক্ষণ করা হয়। Telegram নোটিফিকেশন সেটিংসও এই ফর্মে রাখা আছে।</p>
+          <label style="color:var(--gold);font-weight:bold;">২. Telegram Order Notification:</label>
+          <p style="color:#f57c00;font-size:13px;">নিরাপত্তার জন্য এই ব্রাউজার-ভিত্তিক সংস্করণে Telegram Bot Token ব্যবহার বন্ধ রাখা হয়েছে। পরে নিরাপদ server-side function দিয়ে যুক্ত করতে হবে।</p>
+          <p style="color:var(--muted);font-size:13px;margin-top:10px;">Supabase-এর পাবলিক ক্লায়েন্ট কনফিগারেশন ওয়েবসাইটে স্বয়ংক্রিয়ভাবে ব্যবহৃত হয়। কোনো Secret বা service_role key এই HTML ফাইলে রাখা যাবে না। Telegram Bot Token নিরাপদ সার্ভার-সাইড ব্যবস্থা ছাড়া এখানে ব্যবহার করা হয় না।</p>
         </div>
       </div>
 
@@ -899,156 +892,147 @@ button:hover{
 
 // CONFIGURATION: Supabase URL and publishable/anon key are saved from Admin > Settings. Never place a service_role/secret key in this public HTML.
 
-// GLOBAL NAVIGATION HISTORY STACK SYSTEM
+// GLOBAL NAVIGATION HISTORY + SINGLE ACTIVE PAGE SCROLL
 let navHistoryStack = [];
 
+const SHOP_MODAL_IDS = ['checkoutModal', 'imgSliderModal', 'customerOrdersModal', 'adminModal'];
+
 function getCurrentState() {
-  const imgSlider = document.getElementById('imgSliderModal');
-  if(imgSlider && imgSlider.style.display === 'flex'){
-    return { type: 'IMAGE_SLIDER' };
-  }
-  
-  const checkout = document.getElementById('checkoutModal');
-  if(checkout && checkout.style.display === 'flex'){
-    return { type: 'CHECKOUT' };
-  }
+  const visible = id => {
+    const el = document.getElementById(id);
+    return !!el && getComputedStyle(el).display !== 'none';
+  };
 
-  const custOrders = document.getElementById('customerOrdersModal');
-  if(custOrders && custOrders.style.display === 'flex'){
-    return { type: 'CUSTOMER_ORDERS' };
-  }
+  if(visible('imgSliderModal')) return { type: 'IMAGE_SLIDER' };
+  if(visible('checkoutModal')) return { type: 'CHECKOUT' };
+  if(visible('customerOrdersModal')) return { type: 'CUSTOMER_ORDERS' };
 
-  const adminModal = document.getElementById('adminModal');
-  if(adminModal && adminModal.style.display === 'flex'){
+  if(visible('adminModal')){
     const adminPanel = document.getElementById('adminPanel');
     if(adminPanel && !adminPanel.classList.contains('hidden')){
-      let activeTabId = 'analyticsTab';
-      ['analyticsTab', 'productsTab', 'ordersTab', 'usersTab', 'settingsTab'].forEach(tId => {
-        const el = document.getElementById(tId);
-        if(el && !el.classList.contains('hidden')){
-          activeTabId = tId;
-        }
-      });
+      const tabs = ['analyticsTab', 'productsTab', 'ordersTab', 'usersTab', 'settingsTab'];
+      const activeTabId = tabs.find(id => {
+        const el = document.getElementById(id);
+        return el && !el.classList.contains('hidden');
+      }) || 'analyticsTab';
       return { type: 'ADMIN_PANEL', tabId: activeTabId };
-    } else {
-      return { type: 'ADMIN_AUTH' };
     }
+    return { type: 'ADMIN_AUTH' };
   }
 
   const shop = document.getElementById('shop');
-  if(shop && !shop.classList.contains('hidden')){
-    return { type: 'SHOP' };
-  }
-
+  if(shop && !shop.classList.contains('hidden')) return { type: 'SHOP' };
   return { type: 'LOGIN' };
 }
 
-function recordNavState() {
-  const curr = getCurrentState();
-  if(navHistoryStack.length > 0){
-    const last = navHistoryStack[navHistoryStack.length - 1];
-    if(last.type === curr.type && last.tabId === curr.tabId){
-      return;
-    }
-  }
-  navHistoryStack.push(curr);
-  updateGlobalBackButtonVisibility();
-}
+function syncNavigationUI() {
+  const anyModalOpen = SHOP_MODAL_IDS.some(id => {
+    const el = document.getElementById(id);
+    return el && getComputedStyle(el).display !== 'none';
+  });
+  document.body.classList.toggle('modal-open', anyModalOpen);
 
-function updateGlobalBackButtonVisibility() {
   const btn = document.getElementById('globalFloatingBackButton');
   if(!btn) return;
-  const curr = getCurrentState();
-  if(navHistoryStack.length > 0 || curr.type !== 'LOGIN'){
-    btn.classList.remove('hidden');
-    btn.style.display = 'flex';
-  } else {
-    btn.classList.add('hidden');
-    btn.style.display = 'none';
-  }
+  const current = getCurrentState();
+  const isOverlayPage = ['IMAGE_SLIDER', 'CHECKOUT', 'CUSTOMER_ORDERS', 'ADMIN_AUTH', 'ADMIN_PANEL'].includes(current.type);
+  const shouldShow = anyModalOpen && isOverlayPage && navHistoryStack.length > 0;
+  btn.classList.toggle('hidden', !shouldShow);
+  btn.style.display = shouldShow ? 'flex' : 'none';
+}
+
+function recordNavState() {
+  const current = getCurrentState();
+  const last = navHistoryStack[navHistoryStack.length - 1];
+  if(last && last.type === current.type && last.tabId === current.tabId) return;
+  navHistoryStack.push(current);
+  syncNavigationUI();
 }
 
 function closeAllModalsSilent() {
-  const modals = ['checkoutModal', 'imgSliderModal', 'customerOrdersModal', 'adminModal'];
-  modals.forEach(mId => {
-    const el = document.getElementById(mId);
+  SHOP_MODAL_IDS.forEach(id => {
+    const el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
+  syncNavigationUI();
 }
 
 function switchAdminTabSilent(tabId) {
-  ['analyticsTab', 'productsTab', 'ordersTab', 'usersTab', 'settingsTab'].forEach(tId => {
-    const el = document.getElementById(tId);
+  ['analyticsTab', 'productsTab', 'ordersTab', 'usersTab', 'settingsTab'].forEach(id => {
+    const el = document.getElementById(id);
     if(el) el.classList.add('hidden');
   });
   const target = document.getElementById(tabId);
   if(target) target.classList.remove('hidden');
 
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  const btnMap = {
-    'analyticsTab': 0, 'productsTab': 1, 'ordersTab': 2, 'usersTab': 3, 'settingsTab': 4
-  };
+  const btnMap = { analyticsTab: 0, productsTab: 1, ordersTab: 2, usersTab: 3, settingsTab: 4 };
   const btns = document.querySelectorAll('.tab-btn');
-  if(btnMap[tabId] !== undefined && btns[btnMap[tabId]]){
-    btns[btnMap[tabId]].classList.add('active');
-  }
+  if(btnMap[tabId] !== undefined && btns[btnMap[tabId]]) btns[btnMap[tabId]].classList.add('active');
 }
 
-function restoreState(s) {
-  if(!s) return;
+function restoreState(state) {
+  if(!state) return;
   closeAllModalsSilent();
 
-  if(s.type === 'LOGIN'){
-    document.getElementById('shop').classList.add('hidden');
-    document.getElementById('loginBox').classList.remove('hidden');
-  } else if(s.type === 'SHOP'){
-    document.getElementById('loginBox').classList.add('hidden');
-    document.getElementById('shop').classList.remove('hidden');
-  } else if(s.type === 'ADMIN_AUTH'){
-    document.getElementById('shop').classList.remove('hidden');
+  const loginBox = document.getElementById('loginBox');
+  const shop = document.getElementById('shop');
+
+  if(state.type === 'LOGIN'){
+    shop.classList.add('hidden');
+    loginBox.classList.remove('hidden');
+  } else if(state.type === 'SHOP'){
+    loginBox.classList.add('hidden');
+    shop.classList.remove('hidden');
+  } else if(state.type === 'ADMIN_AUTH'){
+    loginBox.classList.add('hidden');
+    shop.classList.remove('hidden');
     document.getElementById('adminModal').style.display = 'flex';
     document.getElementById('adminAuthBox').classList.remove('hidden');
     document.getElementById('adminPanel').classList.add('hidden');
-  } else if(s.type === 'ADMIN_PANEL'){
-    document.getElementById('shop').classList.remove('hidden');
+  } else if(state.type === 'ADMIN_PANEL'){
+    loginBox.classList.add('hidden');
+    shop.classList.remove('hidden');
     document.getElementById('adminModal').style.display = 'flex';
     document.getElementById('adminAuthBox').classList.add('hidden');
     document.getElementById('adminPanel').classList.remove('hidden');
-    switchAdminTabSilent(s.tabId || 'analyticsTab');
-  } else if(s.type === 'CHECKOUT'){
-    document.getElementById('shop').classList.remove('hidden');
+    switchAdminTabSilent(state.tabId || 'analyticsTab');
+  } else if(state.type === 'CHECKOUT'){
+    shop.classList.remove('hidden');
     document.getElementById('checkoutModal').style.display = 'flex';
-  } else if(s.type === 'CUSTOMER_ORDERS'){
-    document.getElementById('shop').classList.remove('hidden');
+  } else if(state.type === 'CUSTOMER_ORDERS'){
+    shop.classList.remove('hidden');
     document.getElementById('customerOrdersModal').style.display = 'flex';
-  } else if(s.type === 'IMAGE_SLIDER'){
-    document.getElementById('shop').classList.remove('hidden');
+  } else if(state.type === 'IMAGE_SLIDER'){
+    shop.classList.remove('hidden');
     document.getElementById('imgSliderModal').style.display = 'flex';
   }
+
+  syncNavigationUI();
+}
+
+function goBackOneLevel() {
+  if(navHistoryStack.length){
+    restoreState(navHistoryStack.pop());
+  } else {
+    closeAllModalsSilent();
+  }
+  syncNavigationUI();
 }
 
 function globalGoBack() {
-  if(navHistoryStack.length === 0){
-    const curr = getCurrentState();
-    if(curr.type === 'ADMIN_PANEL' || curr.type === 'ADMIN_AUTH'){
-      closeAdminModal();
-    } else if(curr.type === 'CHECKOUT'){
-      closeCheckoutModal();
-    } else if(curr.type === 'CUSTOMER_ORDERS'){
-      closeCustomerOrdersModal();
-    } else if(curr.type === 'IMAGE_SLIDER'){
-      closeImgSlider();
-    } else if(curr.type === 'SHOP'){
-      customerLogout();
-    }
-    return;
-  }
-
-  const prevState = navHistoryStack.pop();
-  restoreState(prevState);
-  updateGlobalBackButtonVisibility();
+  goBackOneLevel();
 }
 
+function dismissModalAndRestore(modalId) {
+  const modal = document.getElementById(modalId);
+  if(modal) modal.style.display = 'none';
+  if(navHistoryStack.length){
+    restoreState(navHistoryStack.pop());
+  } else {
+    syncNavigationUI();
+  }
+}
 
 // INITIAL DATA & STORAGE
 let defaultCategories = ["ইলেকট্রনিক্স (Electronics)", "গ্যাজেট (Gadgets)", "ফ্যাশন (Fashion)", "হোম ও লাইফস্টাইল (Home & Lifestyle)", "বিউটি ও কেয়ার (Beauty & Care)"];
@@ -1578,6 +1562,8 @@ function openCheckoutModal(){
   renderSelectedProductsSummary();
   calculateOrderTotal();
   document.getElementById('checkoutModal').style.display = 'flex';
+  syncNavigationUI();
+  document.getElementById('checkoutModal').scrollTop = 0;
 }
 
 function renderSelectedProductsSummary(){
@@ -1644,7 +1630,7 @@ function calculateOrderTotal(){
 }
 
 function closeCheckoutModal(){
-  document.getElementById('checkoutModal').style.display = 'none';
+  dismissModalAndRestore('checkoutModal');
 }
 
 // SUBMIT CUSTOMER ORDER
@@ -1714,6 +1700,7 @@ function openImageSlider(prodId){
   currentSliderIndex = 0;
   updateSliderView();
   document.getElementById('imgSliderModal').style.display = 'flex';
+  syncNavigationUI();
 }
 
 function updateSliderView(){
@@ -1732,7 +1719,7 @@ function nextImg(){
 }
 
 function closeImgSlider(){
-  document.getElementById('imgSliderModal').style.display = 'none';
+  dismissModalAndRestore('imgSliderModal');
 }
 
 // ADMIN MODAL & TABS
@@ -1740,14 +1727,16 @@ function openAdminModal(){
   recordNavState();
 
   document.getElementById('adminModal').style.display = 'flex';
+  syncNavigationUI();
+  document.getElementById('adminModal').scrollTop = 0;
 }
 
 function closeAdminModal(){
-  document.getElementById('adminModal').style.display = 'none';
+  dismissModalAndRestore('adminModal');
 }
 
 async function adminLogin(){
-  if(!supabaseClient){ alert('আগে Supabase URL ও Publishable key সেট করুন।'); return; }
+  if(!supabaseClient){ alert('দোকানের ক্লাউড সংযোগ চালু হয়নি। পেজ রিফ্রেশ করে আবার চেষ্টা করুন।'); return; }
   const email = (document.getElementById('adminEmail')?.value || '').trim();
   const password = (document.getElementById('adminPass')?.value || '').trim();
   if(!email || !password){ alert('অ্যাডমিন ইমেইল ও পাসওয়ার্ড দিন।'); return; }
@@ -1767,7 +1756,7 @@ async function adminLogin(){
   subscribeSupabaseChanges();
   if(products.length && cloudReady) await syncProductsToCloud();
   renderAnalytics(); populateCategoryDropdowns(); populateDeliveryOptions(); populateProfitLabels();
-  render(); renderOrders(); renderUsers(); updateGlobalBackButtonVisibility();
+  render(); renderOrders(); renderUsers(); syncNavigationUI();
 }
 
 async function adminLogout(){
@@ -1778,7 +1767,7 @@ async function adminLogout(){
     document.getElementById('adminPanel').classList.add('hidden');
     document.getElementById('adminAuthBox').classList.remove('hidden');
     document.getElementById('adminPass').value = '';
-    render(); alert('এডমিন লগআউট সফল হয়েছে!');
+    render(); syncNavigationUI(); alert('এডমিন লগআউট সফল হয়েছে!');
   }
 }
 
@@ -1796,6 +1785,7 @@ function switchAdminTab(tabId, btn){
   btn.classList.add('active');
 
   if(tabId === 'analyticsTab') renderAnalytics();
+  syncNavigationUI();
 }
 
 // LIVE MATHEMATICAL CALCULATOR FOR PRODUCT FORM
@@ -2088,7 +2078,10 @@ async function deleteProduct(id){
   if(confirm('আপনি কি নিশ্চিত যে এই পণ্যটি মুছে ফেলতে চান?')){
     products = products.filter(p => String(p.id) !== String(id));
     localStorage.setItem('products', JSON.stringify(products));
-    await syncProductsToCloud();
+    if(cloudReady && isAdmin){
+      const { error } = await supabaseClient.from('shop_products').delete().eq('id', String(id));
+      if(error){ alert('ক্লাউড থেকে পণ্যটি মুছতে সমস্যা হয়েছে: ' + error.message); await loadProductsFromCloud(); }
+    }
     populateCategoryDropdowns(); render();
   }
 }
@@ -2286,13 +2279,12 @@ function openCustomerOrdersModal(){
   renderCustomerOrders();
   const modal = document.getElementById('customerOrdersModal');
   if(modal) modal.style.display = 'flex';
-  updateGlobalBackButtonVisibility();
+  syncNavigationUI();
+  if(modal) modal.scrollTop = 0;
 }
 
 function closeCustomerOrdersModal(){
-  const modal = document.getElementById('customerOrdersModal');
-  if(modal) modal.style.display = 'none';
-  updateGlobalBackButtonVisibility();
+  dismissModalAndRestore('customerOrdersModal');
 }
 
 function renderCustomerOrders(){
@@ -2537,9 +2529,21 @@ async function changeAdminPassword(){
 }
 
 // SUPABASE CLOUD DATABASE + REALTIME SYNC
-let cloudSettings = JSON.parse(localStorage.getItem('cloudSettings') || JSON.stringify({
-  supabaseUrl: '', supabaseAnonKey: '', tgToken: '', tgChatId: ''
-}));
+// Public client configuration for the dedicated Nobodhara Shop project.
+// Publishable keys are designed for browser use; never put service_role/secret keys here.
+const SHOP_SUPABASE_DEFAULTS = {
+  supabaseUrl: 'https://bdeyzpjnfobykatqljzr.supabase.co',
+  supabaseAnonKey: 'sb_publishable_yRBRl97i-8qQDUlUbiz3HQ_3vtceQSP'
+};
+let cloudSettings = JSON.parse(localStorage.getItem('cloudSettings') || 'null') || {
+  ...SHOP_SUPABASE_DEFAULTS, tgToken: '', tgChatId: ''
+};
+// Always supply the shared project configuration to first-time visitors on every device.
+cloudSettings = {
+  supabaseUrl: SHOP_SUPABASE_DEFAULTS.supabaseUrl,
+  supabaseAnonKey: SHOP_SUPABASE_DEFAULTS.supabaseAnonKey
+};
+localStorage.setItem('cloudSettings', JSON.stringify(cloudSettings));
 let supabaseClient = null;
 let cloudReady = false;
 let supabaseChannel = null;
@@ -2558,15 +2562,6 @@ function configureSupabase(){
 }
 
 async function initSupabaseSync(){
-  const urlBox = document.getElementById('supabaseUrl');
-  const keyBox = document.getElementById('supabaseAnonKey');
-  if(urlBox) urlBox.value = cloudSettings.supabaseUrl || '';
-  if(keyBox) keyBox.value = cloudSettings.supabaseAnonKey || '';
-  const tokenBox = document.getElementById('telegramBotToken');
-  const chatBox = document.getElementById('telegramChatId');
-  if(tokenBox) tokenBox.value = cloudSettings.tgToken || '';
-  if(chatBox) chatBox.value = cloudSettings.tgChatId || '';
-
   if(!configureSupabase()) return;
   const { data: sessionData } = await supabaseClient.auth.getSession();
   if(sessionData?.session){
@@ -2647,20 +2642,11 @@ function subscribeSupabaseChanges(){
 async function syncProductsToCloud(){
   if(!cloudReady) return;
   if(!isAdmin){ console.warn('Only an authenticated shop admin can change products.'); return; }
+  // Upsert only. Never infer cloud deletions from a possibly stale device-local list.
   const rows = products.map(p => ({ id: String(p.id), data: p }));
-  if(rows.length){
-    const { error } = await supabaseClient.from('shop_products').upsert(rows, { onConflict: 'id' });
-    if(error){ alert('পণ্য ক্লাউডে সেভ হয়নি: ' + error.message); return; }
-  }
-  const { data: existing, error: readError } = await supabaseClient.from('shop_products').select('id');
-  if(readError){ console.error(readError.message); return; }
-  const keep = new Set(rows.map(r => r.id));
-  for(const row of (existing || [])){
-    if(!keep.has(row.id)){
-      const { error } = await supabaseClient.from('shop_products').delete().eq('id', row.id);
-      if(error) console.error('Product delete sync failed:', error.message);
-    }
-  }
+  if(!rows.length) return;
+  const { error } = await supabaseClient.from('shop_products').upsert(rows, { onConflict: 'id' });
+  if(error){ alert('পণ্য ক্লাউডে সেভ হয়নি: ' + error.message); return; }
 }
 
 async function insertOrderToCloud(order){
@@ -2671,15 +2657,11 @@ async function insertOrderToCloud(order){
 
 async function syncOrdersToCloud(){
   if(!cloudReady || !isAdmin) return;
+  // Upsert current order records only; do not delete cloud orders based on local cache.
   const rows = orders.map(o => ({ id: String(o.orderId), phone: String(o.phone || ''), data: o }));
-  if(rows.length){
-    const { error } = await supabaseClient.from('shop_orders').upsert(rows, { onConflict: 'id' });
-    if(error){ alert('অর্ডার ক্লাউডে আপডেট হয়নি: ' + error.message); return; }
-  }
-  const { data: existing, error: readError } = await supabaseClient.from('shop_orders').select('id');
-  if(readError) return;
-  const keep = new Set(rows.map(r => r.id));
-  for(const row of (existing || [])) if(!keep.has(row.id)) await supabaseClient.from('shop_orders').delete().eq('id', row.id);
+  if(!rows.length) return;
+  const { error } = await supabaseClient.from('shop_orders').upsert(rows, { onConflict: 'id' });
+  if(error) alert('অর্ডার ক্লাউডে আপডেট হয়নি: ' + error.message);
 }
 
 async function syncShopSetting(key, value){
@@ -2705,21 +2687,9 @@ async function uploadProductImages(dataUrls){
   return uploaded;
 }
 
-async function saveCloudSettings(){
-  const supabaseUrl = document.getElementById('supabaseUrl').value.trim();
-  const supabaseAnonKey = document.getElementById('supabaseAnonKey').value.trim();
-  const tgToken = document.getElementById('telegramBotToken').value.trim();
-  const tgChatId = document.getElementById('telegramChatId').value.trim();
-  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseUrl) || !supabaseAnonKey){
-    alert('সঠিক Supabase Project URL এবং Publishable/anon key দিন।'); return;
-  }
-  cloudSettings = { supabaseUrl, supabaseAnonKey, tgToken, tgChatId };
-  localStorage.setItem('cloudSettings', JSON.stringify(cloudSettings));
-  alert('Supabase সংযোগের তথ্য সংরক্ষিত হয়েছে। এখন পেজ রিফ্রেশ হবে।');
-  location.reload();
-}
-
 function sendTelegramOrderAlert(order){
+  // Telegram bot tokens must not be stored or called from public browser HTML.
+  return;
   if(!cloudSettings.tgToken || !cloudSettings.tgChatId) return;
 
   let itemsTxt = '';
@@ -2764,7 +2734,7 @@ ${itemsTxt}
 // INITIAL RENDER
 initSupabaseSync().then(() => render()).catch(err => console.error("Supabase startup error:", err));
 render();
-updateGlobalBackButtonVisibility();
+syncNavigationUI();
 </script>
 
 
