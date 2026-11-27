@@ -24,6 +24,18 @@
 }
 
 *{box-sizing:border-box;}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: url('1000088938.png') no-repeat center center fixed;
+  background-size: min(80vw, 550px);
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: -1;
+}
+
 body{margin:0;font-family:'Segoe UI', Arial, sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
 body.modal-open{overflow:hidden;overscroll-behavior:none;}
 body.modal-open .container{touch-action:none;}
@@ -43,7 +55,7 @@ header small{color:var(--muted);font-size:13px;}
 .menu-btn{
   position:absolute;
   right:20px;
-  top:90px;
+  top:170px;
   font-size:14px;
   font-weight:bold;
   cursor:pointer;
@@ -465,14 +477,87 @@ button:hover{
   transform: translateY(0) scale(0.98);
 }
 
+
+/* THEME OVERLAY & CATEGORY PILLS STYLING */
+#bgOverlayLayer {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 0.3s;
+}
+
+.cat-pill-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 4px 12px 4px;
+  margin-bottom: 15px;
+  scrollbar-width: thin;
+}
+.cat-pill {
+  background: #181822;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cat-pill:hover, .cat-pill.active {
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
+  font-weight: bold;
+}
+.media-container-slider {
+  width: 100%;
+  max-width: 85vw;
+  max-height: 70vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.media-container-slider iframe, .media-container-slider video {
+  width: 80vw;
+  height: 60vh;
+  max-width: 800px;
+  max-height: 480px;
+  border-radius: 12px;
+  border: 1px solid var(--gold);
+}
+.badge-variant-selected {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: var(--success);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
 </style>
 </head>
 
 <body>
+<div id="bgOverlayLayer"></div>
 
 <header>
-  <h1>নবধারা অনলাইন শপ </h1>
-  <small>Black Gold Premium Admin & E-Commerce Control Portal</small>
+  <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:4px;">
+    <img id="shopLogoHeader" src="1000088938.png" alt="নবধারা অনলাইন শপ" style="max-height:85px; max-width:240px; object-fit:contain; margin-bottom:6px; filter:drop-shadow(0 2px 10px rgba(212,175,55,0.4));">
+    <h1>নবধারা অনলাইন শপ</h1>
+    <small>Black Gold Premium Admin & E-Commerce Control Portal</small>
+  </div>
   <div class="menu-btn" onclick="openAdminModal()">
     <i class="fa-solid fa-user-shield"></i> এডমিন প্যানেল (Admin Portal)
   </div>
@@ -480,32 +565,34 @@ button:hover{
 
 <div class="container">
 
-  <!-- CUSTOMER LOGIN / SHOP ACCESS -->
-  <div id="loginBox" class="card" style="max-width:450px;margin:40px auto;padding:30px;">
-    <h3 style="color:var(--gold);text-align:center;margin-top:0;">
-      <i class="fa-solid fa-shop"></i> গ্রাহক প্রবেশ (Customer Login)
-    </h3>
-    <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:15px;">
-      দোকানে কেনাকাটা করতে আপনার অথেন্টিক মোবাইল নম্বর দিয়ে প্রবেশ করুন।
-    </p>
+  <!-- CUSTOMER SHOP PANEL (VISIBLE TO ALL VISITORS) -->
+  <div id="shop">
 
-    <label style="font-size:13px;color:var(--muted);">অনুমোদিত কান্ট্রি কোড ও মোবাইল নম্বর (বাধ্যতামূলক):</label>
-    <div style="display:flex;gap:8px;margin-top:4px;">
-      <select id="loginCountryCode" style="width:130px;font-size:13px;padding:10px;">
-        <!-- Populated dynamically based on Admin settings -->
-      </select>
-      <input id="phone" type="tel" placeholder="017XXXXXXXX" required style="flex:1;">
+  <!-- CUSTOMER LOGIN MODAL -->
+  <div class="modal" id="customerLoginModal" style="z-index:1050;">
+    <div class="modal-content" style="max-width:460px;">
+      <span class="close-modal" onclick="closeCustomerLoginModal()">&times;</span>
+      <h3 style="color:var(--gold);text-align:center;margin-top:0;">
+        <i class="fa-solid fa-shop"></i> গ্রাহক প্রবেশ (Customer Login)
+      </h3>
+      <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:15px;">
+        কেনাকাটা করতে বা অর্ডার নিশ্চিত করতে আপনার মোবাইল নম্বর দিয়ে প্রবেশ করুন।
+      </p>
+
+      <label style="font-size:13px;color:var(--muted);">অনুমোদিত কান্ট্রি কোড ও মোবাইল নম্বর (বাধ্যতামূলক):</label>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <select id="loginCountryCode" style="width:130px;font-size:13px;padding:10px;">
+        </select>
+        <input id="phone" type="tel" placeholder="017XXXXXXXX" required style="flex:1;">
+      </div>
+
+      <small id="loginNoticeHint" style="color:var(--gold);display:block;margin:6px 0 14px 0;font-size:12px;line-height:1.4;">
+        * রেনডম নম্বর বা অক্ষর দিয়ে প্রবেশ করা সম্ভব নয়। এডমিন অনুমোদিত দেশের আসল মোবাইল নম্বর গ্রহণযোগ্য।
+      </small>
+
+      <button onclick="login()"><i class="fa-solid fa-right-to-bracket"></i> প্রবেশ নিশ্চিত করুন</button>
     </div>
-
-    <small id="loginNoticeHint" style="color:var(--gold);display:block;margin:6px 0 14px 0;font-size:12px;line-height:1.4;">
-      * রেনডম নম্বর বা অক্ষর দিয়ে প্রবেশ করা সম্ভব নয়। এডমিন অনুমোদিত দেশের আসল মোবাইল নম্বর গ্রহণযোগ্য।
-    </small>
-
-    <button onclick="login()"><i class="fa-solid fa-right-to-bracket"></i> দোকানে প্রবেশ করুন</button>
   </div>
-
-  <!-- CUSTOMER SHOP PANEL -->
-  <div id="shop" class="hidden">
     <div class="section-title">
       <div style="display:flex;align-items:center;gap:10px;">
         <i class="fa-solid fa-boxes-stacked"></i> <span>পণ্যসমূহ (Products Grid)</span>
@@ -529,7 +616,13 @@ button:hover{
     </div>
 
     <!-- PRODUCTS GRID -->
+    
+    <!-- CATEGORY PILLS BAR -->
+    <div class="cat-pill-container" id="categoryPillsContainer">
+      <!-- Dynamically populated -->
+    </div>
     <div class="grid" id="productList"></div>
+    
 
     <!-- FLOATING CART BAR DIRECTLY BELOW PRODUCTS GRID -->
     <div class="cart-bar hidden" id="cartBar">
@@ -544,6 +637,15 @@ button:hover{
 
   </div>
 
+</div>
+
+<!-- CUSTOMER ORDERS MODAL -->
+<div class="modal" id="customerOrdersModal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeCustomerOrdersModal()">&times;</span>
+    <h3 style="color:var(--gold);margin-top:0;"><i class="fa-solid fa-receipt"></i> আমার অর্ডারসমূহ</h3>
+    <div id="customerOrdersList"></div>
+  </div>
 </div>
 
 <!-- CHECKOUT MODAL -->
@@ -602,25 +704,29 @@ button:hover{
 </div>
 
 <!-- IMAGE CAROUSEL SLIDER MODAL WITH BOTTOM-RIGHT FLOATING CLOSE & BACK BUTTONS -->
-<div class="img-slider-modal" id="imgSliderModal">
+<div class="img-slider-modal" id="imgSliderModal" ontouchstart="handleSliderTouchStart(event)" ontouchend="handleSliderTouchEnd(event)">
   <span class="close-modal" style="top:20px;right:25px;font-size:32px;color:#fff;" onclick="closeImgSlider()">&times;</span>
   
   <div class="slider-container">
     <button class="slider-btn slider-prev" onclick="prevImg()"><i class="fa-solid fa-chevron-left"></i></button>
-    <img id="sliderImg" class="slider-img" src="" alt="Product Image">
+    
+    <div class="media-container-slider" id="mediaSliderBox">
+      <img id="sliderImg" class="slider-img" src="" alt="Product Image">
+      <iframe id="sliderIframe" style="display:none;" frameborder="0" allowfullscreen></iframe>
+      <video id="sliderVideo" style="display:none;" controls></video>
+    </div>
+
     <button class="slider-btn slider-next" onclick="nextImg()"><i class="fa-solid fa-chevron-right"></i></button>
   </div>
   
   <div class="slider-counter" id="sliderCounter">1 / 1</div>
-</div>
 
-<!-- CUSTOMER ORDERS MODAL -->
-<div class="modal" id="customerOrdersModal">
-  <div class="modal-content" style="max-width:800px;">
-    <span class="close-modal" onclick="closeCustomerOrdersModal()">&times;</span>
-    <h3 style="color:var(--gold);margin-top:0;"><i class="fa-solid fa-receipt"></i> আমার অর্ডার ইতিহাস (My Orders)</h3>
-    <div id="customerOrdersList"></div>
-  </div>
+  <div id="sliderThumbnails" style="display:flex;gap:8px;margin-top:10px;max-width:90vw;overflow-x:auto;padding:5px 0;"></div>
+
+  <button class="btn-success" onclick="selectCurrentSliderVariant()" style="margin-top:15px;width:auto;padding:10px 22px;font-size:14px;font-weight:bold;box-shadow:0 4px 15px rgba(46,125,50,0.4);">
+    <i class="fa-solid fa-check-circle"></i> 📌 এই ছবি / ভিডিও ডিজাইনটি অর্ডার করতে পছন্দ করুন
+  </button>
+</div>
 </div>
 
 <!-- ADMIN MODAL -->
@@ -754,9 +860,21 @@ button:hover{
             </div>
           </div>
 
-          <label>একাধিক ছবির ফাইল অথবা Image URL লিঙ্কসমূহ (কমা দিয়ে আলাদা করুন):</label>
-          <input type="file" id="pimgFiles" accept="image/*" multiple onchange="handleImageUpload(event)">
-          <textarea id="pimgUrls" rows="2" placeholder="অথবা সরাসরি ছবির URL লিঙ্ক দিন (যেমন: https://img1.png, https://img2.png)"></textarea>
+          <label><i class="fa-solid fa-images"></i> পণ্যের ছবি ও নির্দিষ্ট ছবির নাম (Images & Optional Image Names):</label>
+          <div style="background:#14141d;padding:12px;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">১. ডিভাইসের ছবি ফাইল সিলেক্ট করুন:</div>
+            <input type="file" id="pimgFiles" accept="image/*" multiple onchange="handleImageUpload(event)">
+            
+            <div style="font-size:12px;color:var(--muted);margin-top:10px;margin-bottom:4px;">২. অথবা সরাসরি ছবির URL লিঙ্ক দিন (কমা দিয়ে একাধিক দিন):</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <textarea id="pimgUrls" rows="2" placeholder="যেমন: https://img1.png, https://img2.png" style="flex:1;margin:0;"></textarea>
+              <button type="button" class="btn-info" onclick="addUrlsToAdminImageList()" style="width:auto;padding:10px 14px;margin:0;white-space:nowrap;font-size:13px;">
+                <i class="fa-solid fa-plus-circle"></i> লিঙ্ক যোগ করুন
+              </button>
+            </div>
+
+            <div id="adminImagePreviewList" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
 
           <div style="display:flex;gap:10px;margin-top:10px;">
             <button type="submit" class="btn-success" style="flex:2;"><i class="fa-solid fa-save"></i> পণ্য সংরক্ষণ করুন</button>
@@ -786,6 +904,43 @@ button:hover{
 
       <!-- TAB 4: PASSWORD & SYSTEM SETTINGS -->
       <div id="settingsTab" class="hidden">
+
+        <h4 style="color:var(--gold);margin-top:25px;"><i class="fa-solid fa-palette"></i> দোকান লোগো, ব্যাকগ্রাউন্ড ও কালার কাস্টমাইজেশন (Theme Appearance)</h4>
+        <div style="background:#1e1e26;padding:20px;border-radius:10px;border:1px solid var(--border);margin-bottom:25px;">
+          <p style="font-size:13px;color:var(--muted);margin-top:0;">এখানে দেওয়া লোগো, ব্যাকগ্রাউন্ড ছবি ও কালার যেকোনো সময় পরিবর্তন করতে পারবেন।</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:15px;">
+            <div>
+              <label>দোকানের লোগো (ছবি URL বা আপলোড):</label>
+              <input id="cShopLogoInput" placeholder="1000088938.png বা URL">
+              <input type="file" id="cShopLogoFile" accept="image/*" onchange="handleLogoFileUpload(event)" style="font-size:12px;margin-top:4px;">
+            </div>
+            <div>
+              <label>ব্যাকগ্রাউন্ড পিকচার (ছবি URL বা আপলোড):</label>
+              <input id="cShopBgInput" placeholder="1000088938.png বা URL">
+              <input type="file" id="cShopBgFile" accept="image/*" onchange="handleBgFileUpload(event)" style="font-size:12px;margin-top:4px;">
+            </div>
+            <div>
+              <label>ব্যাকগ্রাউন্ড কালার:</label>
+              <input type="color" id="cShopBgColor" value="#0b0b0d" style="height:42px;cursor:pointer;">
+            </div>
+            <div>
+              <label>টেক্সট / ফন্ট কালার:</label>
+              <input type="color" id="cShopTextColor" value="#ffffff" style="height:42px;cursor:pointer;">
+            </div>
+            <div>
+              <label>গোল্ড / থিম অ্যাকসেন্ট কালার:</label>
+              <input type="color" id="cShopGoldColor" value="#d4af37" style="height:42px;cursor:pointer;">
+            </div>
+            <div>
+              <label>ব্যাকগ্রাউন্ড ওভারলে ডার্কনেস (%):</label>
+              <input type="range" id="cShopOverlayOpacity" min="0" max="95" value="70">
+            </div>
+          </div>
+          <button onclick="saveThemeSettingsFromAdmin()" class="btn-success" style="margin-top:15px;width:auto;padding:10px 24px;">
+            <i class="fa-solid fa-floppy-disk"></i> থিম কাস্টমাইজেশন সেভ করুন
+          </button>
+        </div>
+
         <h4 style="color:var(--gold);"><i class="fa-solid fa-calculator"></i> একক লাভ ও প্রফিট মার্জিন কাস্টম লেবেল</h4>
         <div style="max-width:600px;background:#1e1e26;padding:20px;border-radius:10px;border:1px solid var(--border);margin-bottom:25px;">
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -889,13 +1044,349 @@ button:hover{
 <div id="printMemoContainer" class="hidden"></div>
 
 <script>
+// ==========================================
+// FEATURE 4, 5, 6, 7 ENHANCEMENTS
+// ==========================================
+
+let activeCategoryFilter = '';
+let currentSliderProdId = null;
+
+let shopThemeSettings = JSON.parse(localStorage.getItem('shopThemeSettings') || JSON.stringify({
+  logo: '1000088938.png',
+  bg: '1000088938.png',
+  bgColor: '#0b0b0d',
+  textColor: '#ffffff',
+  goldColor: '#d4af37',
+  overlayOpacity: 75
+}));
+
+// MEDIA URL PARSER (IMAGES & VIDEOS)
+function parseMediaUrl(item) {
+  if(!item) return { type: 'image', url: 'https://via.placeholder.com/300?text=No+Image', name: '' };
+  
+  let rawUrl = '';
+  let mediaName = '';
+  
+  if(typeof item === 'object' && item !== null){
+    rawUrl = item.url || '';
+    mediaName = item.name || '';
+  } else {
+    rawUrl = String(item);
+  }
+
+  const trimmed = rawUrl.trim();
+  if(!trimmed) return { type: 'image', url: 'https://via.placeholder.com/300?text=No+Image', name: mediaName };
+
+  // YOUTUBE
+  if(trimmed.includes('youtube.com') || trimmed.includes('youtu.be')){
+    let videoId = '';
+    if(trimmed.includes('youtu.be/')){
+      videoId = trimmed.split('youtu.be/')[1].split('?')[0].split('&')[0];
+    } else if(trimmed.includes('watch?v=')){
+      videoId = trimmed.split('watch?v=')[1].split('&')[0];
+    } else if(trimmed.includes('/embed/')){
+      videoId = trimmed.split('/embed/')[1].split('?')[0];
+    }
+    if(videoId){
+      return {
+        type: 'youtube',
+        url: trimmed,
+        embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`,
+        name: mediaName
+      };
+    }
+  }
+
+  // DIRECT VIDEO (.mp4, .webm, .ogg)
+  if(/\.(mp4|webm|ogg)(\?.*)?$/i.test(trimmed)){
+    return { type: 'video', url: trimmed, name: mediaName };
+  }
+
+  // IMAGE
+  return { type: 'image', url: trimmed, name: mediaName };
+}
+
+// RENDER CATEGORY PILLS
+function renderCategoryPills(activeCat = '') {
+  activeCategoryFilter = activeCat;
+  const container = document.getElementById('categoryPillsContainer');
+  if(!container) return;
+
+  const catSet = new Set(['সকল পণ্য', ...defaultCategories, ...customCategories]);
+  products.forEach(p => { if(p.category) catSet.add(p.category); });
+  const allCats = Array.from(catSet);
+
+  container.innerHTML = allCats.map(cat => {
+    const isAll = cat === 'সকল পণ্য';
+    const catVal = isAll ? '' : cat;
+    const isActive = activeCategoryFilter === catVal;
+    const icon = isAll ? '📦' : '🏷️';
+    return `<button class="cat-pill ${isActive ? 'active' : ''}" onclick="filterByCategory('${catVal}')">
+      <span>${icon}</span> <span>${cat}</span>
+    </button>`;
+  }).join('');
+}
+
+function filterByCategory(catVal) {
+  activeCategoryFilter = catVal;
+  const selectEl = document.getElementById('catFilter');
+  if(selectEl) selectEl.value = catVal;
+  renderCategoryPills(catVal);
+  render();
+}
+
+// ENHANCED PRODUCT REORDERING (MOVE UP / MOVE DOWN)
+async function moveProductUp(index) {
+  if(index <= 0) return;
+  const temp = products[index];
+  products[index] = products[index - 1];
+  products[index - 1] = temp;
+
+  localStorage.setItem('products', JSON.stringify(products));
+  if(typeof syncProductsToCloud === 'function') await syncProductsToCloud();
+  render();
+}
+
+async function moveProductDown(index) {
+  if(index >= products.length - 1) return;
+  const temp = products[index];
+  products[index] = products[index + 1];
+  products[index + 1] = temp;
+
+  localStorage.setItem('products', JSON.stringify(products));
+  if(typeof syncProductsToCloud === 'function') await syncProductsToCloud();
+  render();
+}
+
+// ENHANCED IMAGE & VIDEO SLIDER MODAL
+
+// SLIDER TOUCH & KEYBOARD SWIPE NAVIGATION
+let touchStartX = 0;
+let touchEndX = 0;
+
+function handleSliderTouchStart(e) {
+  if(e.changedTouches && e.changedTouches.length > 0) {
+    touchStartX = e.changedTouches[0].screenX;
+  }
+}
+
+function handleSliderTouchEnd(e) {
+  if(e.changedTouches && e.changedTouches.length > 0) {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchEndX - touchStartX;
+    if(Math.abs(diff) > 30) {
+      if(diff < 0) nextImg();
+      else prevImg();
+    }
+  }
+}
+
+if(typeof window !== 'undefined') {
+  window.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('imgSliderModal');
+    if(modal && getComputedStyle(modal).display !== 'none') {
+      if(e.key === 'ArrowLeft') prevImg();
+      if(e.key === 'ArrowRight') nextImg();
+      if(e.key === 'Escape') closeImgSlider();
+    }
+  });
+}
+
+function goToSliderIndex(idx) {
+  if(idx >= 0 && idx < currentSliderImages.length) {
+    currentSliderIndex = idx;
+    updateSliderView();
+  }
+}
+
+function prevImg() {
+  if(!currentSliderImages || currentSliderImages.length <= 1) return;
+  currentSliderIndex = (currentSliderIndex - 1 + currentSliderImages.length) % currentSliderImages.length;
+  updateSliderView();
+}
+
+function nextImg() {
+  if(!currentSliderImages || currentSliderImages.length <= 1) return;
+  currentSliderIndex = (currentSliderIndex + 1) % currentSliderImages.length;
+  updateSliderView();
+}
+
+
+function openImageSlider(prodId) {
+  recordNavState();
+
+  const prod = products.find(p => p.id === prodId);
+  if(!prod || !prod.images || prod.images.length === 0) return;
+
+  currentSliderProdId = prodId;
+  currentSliderImages = prod.images;
+  currentSliderIndex = 0;
+  updateSliderView();
+  
+  const modal = document.getElementById('imgSliderModal');
+  if(modal) modal.style.display = 'flex';
+  syncNavigationUI();
+}
+
+function updateSliderView() {
+  if(!currentSliderImages || currentSliderImages.length === 0) return;
+
+  const mediaItem = parseMediaUrl(currentSliderImages[currentSliderIndex]);
+  const imgEl = document.getElementById('sliderImg');
+  const iframeEl = document.getElementById('sliderIframe');
+  const videoEl = document.getElementById('sliderVideo');
+  const counterEl = document.getElementById('sliderCounter');
+  const thumbsContainer = document.getElementById('sliderThumbnails');
+
+  if(counterEl){
+    const nameLabel = mediaItem.name ? ` | 🏷️ ${mediaItem.name}` : '';
+    counterEl.innerText = `${currentSliderIndex + 1} / ${currentSliderImages.length}${nameLabel}`;
+  }
+
+  if(imgEl) imgEl.style.display = 'none';
+  if(iframeEl) { iframeEl.style.display = 'none'; iframeEl.src = ''; }
+  if(videoEl) { videoEl.style.display = 'none'; if(typeof videoEl.pause === 'function') videoEl.pause(); }
+
+  if(mediaItem.type === 'youtube') {
+    if(iframeEl) {
+      iframeEl.src = mediaItem.embedUrl;
+      iframeEl.style.display = 'block';
+    }
+  } else if(mediaItem.type === 'video') {
+    if(videoEl) {
+      videoEl.src = mediaItem.url;
+      videoEl.style.display = 'block';
+    }
+  } else {
+    if(imgEl) {
+      imgEl.src = mediaItem.url;
+      imgEl.style.display = 'block';
+    }
+  }
+
+  if(thumbsContainer) {
+    if(currentSliderImages.length > 1) {
+      thumbsContainer.style.display = 'flex';
+      thumbsContainer.innerHTML = currentSliderImages.map((imgUrl, idx) => {
+        const itemMedia = parseMediaUrl(imgUrl);
+        const isActive = idx === currentSliderIndex;
+        const borderStyle = isActive ? 'border:2px solid var(--gold);transform:scale(1.1);' : 'border:1px solid #444;opacity:0.6;';
+        if(itemMedia.type === 'image') {
+          return `<img src="${itemMedia.url}" onclick="goToSliderIndex(${idx})" style="width:45px;height:45px;object-fit:cover;border-radius:6px;cursor:pointer;transition:0.2s;${borderStyle}">`;
+        } else {
+          return `<div onclick="goToSliderIndex(${idx})" style="width:45px;height:45px;background:#111;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px;transition:0.2s;${borderStyle}"><i class="fa-solid fa-film"></i></div>`;
+        }
+      }).join('');
+    } else {
+      thumbsContainer.style.display = 'none';
+    }
+  }
+}
+
+// SELECT SPECIFIC IMAGE/VIDEO VARIANT FOR PURCHASING
+function selectCurrentSliderVariant() {
+  if(!currentSliderProdId) return;
+  const prod = products.find(p => p.id === currentSliderProdId);
+  if(!prod) return;
+
+  const chosenMedia = currentSliderImages[currentSliderIndex];
+  const mediaObj = parseMediaUrl(chosenMedia);
+  const mediaNameStr = mediaObj.name ? ` (${mediaObj.name})` : '';
+  
+  let cartItem = selectedCart.find(item => item.id === currentSliderProdId && item.selectedVariant === chosenMedia);
+
+  if(!cartItem) {
+    cartItem = {
+      ...prod,
+      cartKey: prod.id + '_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+      qty: 1,
+      selectedVariant: chosenMedia,
+      selectedImage: chosenMedia
+    };
+    selectedCart.push(cartItem);
+    alert(`প্রোডাক্ট '${prod.name}'${mediaNameStr}-এর এই নির্দিষ্ট ছবি/ডিজাইনটি আপনার চয়েজে যোগ করা হয়েছে!`);
+  } else {
+    cartItem.qty = (cartItem.qty || 1) + 1;
+    alert(`প্রোডাক্ট '${prod.name}'${mediaNameStr}-এর এই নির্দিষ্ট ছবি/ডিজাইনটির পরিমাণ বাড়ানো হয়েছে (মোট: ${cartItem.qty} টি)।`);
+  }
+
+  updateCartBar();
+  render();
+}
+
+// THEME CUSTOMIZER FUNCTIONS
+function handleLogoFileUpload(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    document.getElementById('cShopLogoInput').value = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleBgFileUpload(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    document.getElementById('cShopBgInput').value = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyThemeSettings(theme) {
+  if(!theme) return;
+  const root = document.documentElement;
+
+  if(theme.bgColor) root.style.setProperty('--bg', theme.bgColor);
+  if(theme.textColor) root.style.setProperty('--text', theme.textColor);
+  if(theme.goldColor) root.style.setProperty('--gold', theme.goldColor);
+
+  const logoHeader = document.getElementById('shopLogoHeader');
+  if(logoHeader && theme.logo) logoHeader.src = theme.logo;
+
+  const bgOverlay = document.getElementById('bgOverlayLayer');
+  if(bgOverlay) {
+    bgOverlay.style.backgroundImage = theme.bg ? `url('${theme.bg}')` : "url('1000088938.png')";
+    bgOverlay.style.opacity = (100 - (theme.overlayOpacity || 75)) / 100;
+  }
+}
+
+function saveThemeSettingsFromAdmin() {
+  const logo = (document.getElementById('cShopLogoInput')?.value || '').trim() || '1000088938.png';
+  const bg = (document.getElementById('cShopBgInput')?.value || '').trim() || '1000088938.png';
+  const bgColor = document.getElementById('cShopBgColor')?.value || '#0b0b0d';
+  const textColor = document.getElementById('cShopTextColor')?.value || '#ffffff';
+  const goldColor = document.getElementById('cShopGoldColor')?.value || '#d4af37';
+  const overlayOpacity = Number(document.getElementById('cShopOverlayOpacity')?.value || 75);
+
+  shopThemeSettings = { logo, bg, bgColor, textColor, goldColor, overlayOpacity };
+  localStorage.setItem('shopThemeSettings', JSON.stringify(shopThemeSettings));
+  
+  if(typeof syncShopSetting === 'function') {
+    syncShopSetting('shopThemeSettings', shopThemeSettings);
+  }
+
+  applyThemeSettings(shopThemeSettings);
+  alert('দোকানের লোগো, ব্যাকগ্রাউন্ড ও কালার কাস্টমাইজেশন সফলভাবে সেভ ও প্রয়োগ করা হয়েছে!');
+}
+
+function populateThemeFieldsInAdmin() {
+  if(document.getElementById('cShopLogoInput')) document.getElementById('cShopLogoInput').value = shopThemeSettings.logo || '1000088938.png';
+  if(document.getElementById('cShopBgInput')) document.getElementById('cShopBgInput').value = shopThemeSettings.bg || '1000088938.png';
+  if(document.getElementById('cShopBgColor')) document.getElementById('cShopBgColor').value = shopThemeSettings.bgColor || '#0b0b0d';
+  if(document.getElementById('cShopTextColor')) document.getElementById('cShopTextColor').value = shopThemeSettings.textColor || '#ffffff';
+  if(document.getElementById('cShopGoldColor')) document.getElementById('cShopGoldColor').value = shopThemeSettings.goldColor || '#d4af37';
+  if(document.getElementById('cShopOverlayOpacity')) document.getElementById('cShopOverlayOpacity').value = shopThemeSettings.overlayOpacity !== undefined ? shopThemeSettings.overlayOpacity : 75;
+}
 
 // CONFIGURATION: Supabase URL and publishable/anon key are saved from Admin > Settings. Never place a service_role/secret key in this public HTML.
 
 // GLOBAL NAVIGATION HISTORY + SINGLE ACTIVE PAGE SCROLL
 let navHistoryStack = [];
 
-const SHOP_MODAL_IDS = ['checkoutModal', 'imgSliderModal', 'customerOrdersModal', 'adminModal'];
+const SHOP_MODAL_IDS = ['checkoutModal', 'imgSliderModal', 'customerOrdersModal', 'adminModal', 'customerLoginModal'];
 
 function getCurrentState() {
   const visible = id => {
@@ -939,6 +1430,17 @@ function syncNavigationUI() {
   const shouldShow = anyModalOpen && isOverlayPage && navHistoryStack.length > 0;
   btn.classList.toggle('hidden', !shouldShow);
   btn.style.display = shouldShow ? 'flex' : 'none';
+}
+
+
+function openCustomerLoginModal(){
+  recordNavState();
+  document.getElementById('customerLoginModal').style.display = 'flex';
+  syncNavigationUI();
+}
+
+function closeCustomerLoginModal(){
+  dismissModalAndRestore('customerLoginModal');
 }
 
 function recordNavState() {
@@ -991,12 +1493,19 @@ function restoreState(state) {
     document.getElementById('adminAuthBox').classList.remove('hidden');
     document.getElementById('adminPanel').classList.add('hidden');
   } else if(state.type === 'ADMIN_PANEL'){
-    loginBox.classList.add('hidden');
-    shop.classList.remove('hidden');
-    document.getElementById('adminModal').style.display = 'flex';
-    document.getElementById('adminAuthBox').classList.add('hidden');
-    document.getElementById('adminPanel').classList.remove('hidden');
-    switchAdminTabSilent(state.tabId || 'analyticsTab');
+    if(!isAdmin){
+      // Security enforcement: User logged out as admin, prompt admin login box
+      shop.classList.remove('hidden');
+      document.getElementById('adminModal').style.display = 'flex';
+      document.getElementById('adminAuthBox').classList.remove('hidden');
+      document.getElementById('adminPanel').classList.add('hidden');
+    } else {
+      shop.classList.remove('hidden');
+      document.getElementById('adminModal').style.display = 'flex';
+      document.getElementById('adminAuthBox').classList.add('hidden');
+      document.getElementById('adminPanel').classList.remove('hidden');
+      switchAdminTabSilent(state.tabId || 'analyticsTab');
+    }
   } else if(state.type === 'CHECKOUT'){
     shop.classList.remove('hidden');
     document.getElementById('checkoutModal').style.display = 'flex';
@@ -1122,13 +1631,32 @@ if(products.length === 0){
 
 // AUTO RESTORE LOGGED IN USER IF ANY
 window.onload = function(){
+  applyThemeSettings(shopThemeSettings);
   populateCountryPermissionDropdown();
-  const savedUser = localStorage.getItem('userPhone');
-  if(savedUser){
-    document.getElementById('phone').value = savedUser;
-    login();
-  }
+  populateThemeFieldsInAdmin();
+  renderCategoryPills('');
+
+  // No automatic login on opening website
+  localStorage.removeItem('userPhone');
+  updateCustomerHeaderUI();
 };
+
+function loginSilent(phone){
+  document.getElementById('userPhoneDisplay').innerHTML = `স্বাগতম: <strong>${phone}</strong>`;
+  if(document.getElementById('cPhone')) document.getElementById('cPhone').value = phone;
+}
+
+function updateCustomerHeaderUI(){
+  const savedUser = localStorage.getItem('userPhone');
+  const displayEl = document.getElementById('userPhoneDisplay');
+  if(!displayEl) return;
+  if(savedUser){
+    displayEl.innerHTML = `স্বাগতম: <strong>${savedUser}</strong>`;
+    if(document.getElementById('cPhone')) document.getElementById('cPhone').value = savedUser;
+  } else {
+    displayEl.innerHTML = `<button onclick="openCustomerLoginModal()" class="btn-info" style="width:auto;padding:5px 12px;font-size:12px;margin:0;"><i class="fa-solid fa-right-to-bracket"></i> কাস্টমার লগইন</button>`;
+  }
+}
 
 // COUNTRY CODE PERMISSION & PHONE VALIDATION
 function populateCountryPermissionDropdown(){
@@ -1301,14 +1829,19 @@ function login(){
   }
 
   localStorage.setItem('userPhone', phone);
-  document.getElementById('loginBox').classList.add('hidden');
+  closeAllModalsSilent();
   document.getElementById('shop').classList.remove('hidden');
-  document.getElementById('userPhoneDisplay').innerText = "স্বাগতম: " + phone;
-  document.getElementById('cPhone').value = phone;
+  updateCustomerHeaderUI();
   
   populateCategoryDropdowns();
   populateDeliveryOptions(); populateProfitLabels();
   render();
+
+  if(selectedCart && selectedCart.length > 0){
+    openCheckoutModal();
+  } else {
+    alert('স্বাগতম! লগইন সফল হয়েছে।');
+  }
 }
 
 // LOGOUT CUSTOMER
@@ -1317,10 +1850,11 @@ function customerLogout(){
     localStorage.removeItem('userPhone');
     selectedCart = [];
     updateCartBar();
-    document.getElementById('shop').classList.add('hidden');
-    document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('phone').value = '';
-    alert('সফলভাবে লগআউট হয়েছে!');
+    if(document.getElementById('cPhone')) document.getElementById('cPhone').value = '';
+    updateCustomerHeaderUI();
+    render();
+    alert('সফলভাবে কাস্টমার অ্যাকাউন্ট থেকে লগআউট হয়েছে!');
   }
 }
 
@@ -1463,6 +1997,8 @@ function render(){
 
   filtered.forEach(p => {
     const imgs = (p.images && p.images.length > 0) ? p.images : ['https://via.placeholder.com/300?text=No+Image'];
+    const firstMedia = parseMediaUrl(imgs[0]);
+    const firstImgUrl = firstMedia.url;
     const statusClass = p.status === 'In Stock' ? 'badge-in-stock' : (p.status === 'Out of Stock' ? 'badge-out-of-stock' : 'badge-pre-order');
     const isSelected = selectedCart.some(item => item.id === p.id);
 
@@ -1471,7 +2007,7 @@ function render(){
     card.className = `card ${isSelected ? 'selected' : ''}`;
     card.innerHTML = `
       <div class="card-img-container" onclick="openImageSlider(${p.id})">
-        <img src="${imgs[0]}" alt="${p.name}">
+        <img src="${firstImgUrl}" alt="${p.name}">
         <span class="badge ${statusClass}">${p.status}</span>
         ${imgs.length > 1 ? `<span class="badge-img-count"><i class="fa-solid fa-images"></i> ${imgs.length}</span>` : ''}
       </div>
@@ -1496,7 +2032,7 @@ function render(){
       aCard.className = 'card';
       aCard.innerHTML = `
         <div class="card-img-container" onclick="openImageSlider(${p.id})">
-          <img src="${imgs[0]}" alt="${p.name}">
+          <img src="${firstImgUrl}" alt="${p.name}">
           <span class="badge ${statusClass}">${p.status}</span>
           ${imgs.length > 1 ? `<span class="badge-img-count"><i class="fa-solid fa-images"></i> ${imgs.length}</span>` : ''}
         </div>
@@ -1519,17 +2055,86 @@ function render(){
 }
 
 // TOGGLE SELECT PRODUCT FOR CART
-function toggleSelectProduct(id){
+function toggleSelectProduct(id) {
   const prod = products.find(p => p.id === id);
   if(!prod) return;
 
-  const idx = selectedCart.findIndex(item => item.id === id);
-  if(idx > -1){
-    selectedCart.splice(idx, 1);
+  const existingIndices = selectedCart.map((item, idx) => item.id === id ? idx : -1).filter(idx => idx !== -1);
+  if(existingIndices.length > 0) {
+    selectedCart = selectedCart.filter(item => item.id !== id);
   } else {
-    selectedCart.push({ ...prod, qty: 1 });
+    let chosenMedia = null;
+    if(typeof currentSliderProdId !== 'undefined' && currentSliderProdId === id && typeof currentSliderImages !== 'undefined' && currentSliderImages.length > 0){
+      chosenMedia = currentSliderImages[currentSliderIndex || 0];
+    } else {
+      chosenMedia = (prod.images && prod.images.length > 0) ? prod.images[0] : null;
+    }
+    selectedCart.push({ ...prod, qty: 1, selectedVariant: chosenMedia, selectedImage: chosenMedia });
   }
 
+  updateCartBar();
+  render();
+}
+
+function renderSelectedProductsSummary() {
+  const box = document.getElementById('selectedProductsSummary');
+  if(!box) return;
+
+  if(selectedCart.length === 0) {
+    box.innerHTML = '<p style="color:var(--muted);text-align:center;">কোন পণ্য সিলেক্ট করা হয়নি।</p>';
+    return;
+  }
+
+  box.innerHTML = selectedCart.map((item, idx) => {
+    const variantMedia = item.selectedVariant ? parseMediaUrl(item.selectedVariant) : (item.images && item.images.length > 0 ? parseMediaUrl(item.images[0]) : null);
+    const thumbHtml = variantMedia && variantMedia.type === 'image' ? `<img src="${variantMedia.url}" style="width:45px;height:45px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);">` : (variantMedia && (variantMedia.type === 'video' || variantMedia.type === 'youtube') ? `<div style="width:45px;height:45px;background:#000;border-radius:6px;border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:18px;"><i class="fa-solid fa-film"></i></div>` : `<div style="width:45px;height:45px;background:#000;border-radius:6px;border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:18px;"><i class="fa-solid fa-image"></i></div>`);
+
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+        ${thumbHtml}
+        <div style="flex:1;">
+          <strong style="color:var(--gold);">${item.name}</strong>
+          ${item.selectedVariant ? `<br><small style="color:var(--success);"><i class="fa-solid fa-check"></i> কাস্টম ডিজাইন/ছবি পছন্দ করা হয়েছে</small>` : ''}
+          <br><span style="font-size:12px;color:var(--muted);">একক মূল্য: ৳${item.price}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button type="button" style="width:28px;height:28px;padding:0;line-height:28px;text-align:center;" onclick="updateItemQty(${idx}, -1)">-</button>
+          <span style="font-weight:bold;width:24px;text-align:center;">${item.qty}</span>
+          <button type="button" style="width:28px;height:28px;padding:0;line-height:28px;text-align:center;" onclick="updateItemQty(${idx}, 1)">+</button>
+          <button type="button" class="btn-danger" style="width:28px;height:28px;padding:0;line-height:28px;text-align:center;margin-left:6px;" onclick="removeSelectedCartItem(${idx})">&times;</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateItemQty(idx, change) {
+  if(idx >= 0 && idx < selectedCart.length) {
+    selectedCart[idx].qty = (selectedCart[idx].qty || 1) + change;
+    if(selectedCart[idx].qty <= 0) {
+      selectedCart.splice(idx, 1);
+    }
+  }
+  if(selectedCart.length === 0) {
+    closeCheckoutModal();
+  } else {
+    renderSelectedProductsSummary();
+    calculateOrderTotal();
+  }
+  updateCartBar();
+  render();
+}
+
+function removeSelectedCartItem(idx) {
+  if(idx >= 0 && idx < selectedCart.length) {
+    selectedCart.splice(idx, 1);
+  }
+  if(selectedCart.length === 0) {
+    closeCheckoutModal();
+  } else {
+    renderSelectedProductsSummary();
+    calculateOrderTotal();
+  }
   updateCartBar();
   render();
 }
@@ -1558,6 +2163,13 @@ function openCheckoutModal(){
     alert('প্রথমে অন্তত একটি পণ্য চয়েজে যোগ করুন!');
     return;
   }
+
+  const savedUser = localStorage.getItem('userPhone');
+  if(!savedUser){
+    alert('অর্ডার ও চেকআউট সম্পূর্ণ করতে প্রথমে আপনার মোবাইল নম্বর দিয়ে প্রবেশ (Login) করুন।');
+    openCustomerLoginModal();
+    return;
+  }
   
   renderSelectedProductsSummary();
   calculateOrderTotal();
@@ -1567,40 +2179,38 @@ function openCheckoutModal(){
 }
 
 function renderSelectedProductsSummary(){
-  const summary = document.getElementById('selectedProductsSummary');
-  let html = '<strong style="color:var(--gold);"><i class="fa-solid fa-list-check"></i> বাছাইকৃত পণ্যসমূহ:</strong><div style="margin-top:10px;">';
-  
-  selectedCart.forEach((item, index) => {
-    const thumb = (item.images && item.images.length > 0) ? item.images[0] : 'https://via.placeholder.com/50';
-    html += `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #333;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <img src="${thumb}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);" alt="${item.name}">
-          <div>
-            <strong>${item.name}</strong><br>
-            <small style="color:var(--muted);">একক মূল্য: ৳${item.price}</small>
-          </div>
+  const box = document.getElementById('selectedProductsSummary');
+  if(!box) return;
+
+  if(selectedCart.length === 0){
+    box.innerHTML = '<p style="color:var(--muted);text-align:center;">কোন পণ্য সিলেক্ট করা হয়নি।</p>';
+    return;
+  }
+
+  box.innerHTML = selectedCart.map((item, idx) => {
+    const selectedMediaUrl = item.selectedVariant || (item.images && item.images.length > 0 ? item.images[0] : null);
+    const variantMedia = selectedMediaUrl ? parseMediaUrl(selectedMediaUrl) : null;
+    const thumbHtml = variantMedia && variantMedia.type === 'image'
+      ? `<img src="${variantMedia.url}" alt="${item.name}" style="width:45px;height:45px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);flex-shrink:0;">`
+      : `<div style="width:45px;height:45px;background:#000;border-radius:6px;border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:18px;flex-shrink:0;"><i class="fa-solid fa-${variantMedia && (variantMedia.type === 'video' || variantMedia.type === 'youtube') ? 'film' : 'image'}"></i></div>`;
+
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+        ${thumbHtml}
+        <div style="flex:1;">
+          <strong style="color:var(--gold);">${item.name}</strong>
+          ${item.selectedVariant ? `<br><small style="color:var(--success);"><i class="fa-solid fa-check"></i> কাস্টম ডিজাইন পছন্দ করা হয়েছে</small>` : ''}
+          <br><span style="font-size:12px;color:var(--muted);">একক মূল্য: ৳${item.price}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button type="button" style="width:28px;height:28px;padding:0;" class="btn-secondary" onclick="updateItemQty(${index}, -1)">-</button>
-          <span><strong>${item.qty || 1}</strong></span>
-          <button type="button" style="width:28px;height:28px;padding:0;" class="btn-secondary" onclick="updateItemQty(${index}, 1)">+</button>
-          <button type="button" style="width:28px;height:28px;padding:0;background:var(--danger);" onclick="removeSelectedCartItem(${index})">&times;</button>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button style="width:28px;height:28px;padding:0;line-height:28px;text-align:center;" onclick="updateItemQty(${idx}, -1)">-</button>
+          <span style="font-weight:bold;width:24px;text-align:center;">${item.qty}</span>
+          <button style="width:28px;height:28px;padding:0;line-height:28px;text-align:center;" onclick="updateItemQty(${idx}, 1)">+</button>
+          <button class="btn-danger" style="width:28px;height:28px;padding:0;line-height:28px;text-align:center;margin-left:6px;" onclick="removeSelectedCartItem(${idx})">&times;</button>
         </div>
       </div>
     `;
-  });
-
-  html += '</div>';
-  summary.innerHTML = html;
-}
-
-function updateItemQty(index, delta){
-  if(selectedCart[index]){
-    selectedCart[index].qty = Math.max(1, (selectedCart[index].qty || 1) + delta);
-    renderSelectedProductsSummary();
-    calculateOrderTotal();
-  }
+  }).join('');
 }
 
 function removeSelectedCartItem(index){
@@ -1691,34 +2301,6 @@ async function submitOrder(e){
 }
 
 // IMAGE CAROUSEL SLIDER MODAL
-function openImageSlider(prodId){
-  recordNavState();
-
-  const prod = products.find(p => p.id === prodId);
-  if(!prod || !prod.images || prod.images.length === 0) return;
-
-  currentSliderImages = prod.images;
-  currentSliderIndex = 0;
-  updateSliderView();
-  document.getElementById('imgSliderModal').style.display = 'flex';
-  syncNavigationUI();
-}
-
-function updateSliderView(){
-  document.getElementById('sliderImg').src = currentSliderImages[currentSliderIndex];
-  document.getElementById('sliderCounter').innerText = `${currentSliderIndex + 1} / ${currentSliderImages.length}`;
-}
-
-function prevImg(){
-  currentSliderIndex = (currentSliderIndex - 1 + currentSliderImages.length) % currentSliderImages.length;
-  updateSliderView();
-}
-
-function nextImg(){
-  currentSliderIndex = (currentSliderIndex + 1) % currentSliderImages.length;
-  updateSliderView();
-}
-
 function closeImgSlider(){
   dismissModalAndRestore('imgSliderModal');
 }
@@ -1728,6 +2310,15 @@ function openAdminModal(){
   recordNavState();
 
   document.getElementById('adminModal').style.display = 'flex';
+  if(isAdmin){
+    document.getElementById('adminAuthBox').classList.add('hidden');
+    document.getElementById('adminHeaderActions').classList.remove('hidden');
+    document.getElementById('adminPanel').classList.remove('hidden');
+  } else {
+    document.getElementById('adminAuthBox').classList.remove('hidden');
+    document.getElementById('adminHeaderActions').classList.add('hidden');
+    document.getElementById('adminPanel').classList.add('hidden');
+  }
   syncNavigationUI();
   document.getElementById('adminModal').scrollTop = 0;
 }
@@ -1764,11 +2355,19 @@ async function adminLogout(){
   if(confirm('আপনি কি এডমিন ড্যাশবোর্ড থেকে লগআউট করতে চান?')){
     if(supabaseClient) await supabaseClient.auth.signOut();
     isAdmin = false;
-    document.getElementById('adminHeaderActions').classList.add('hidden');
-    document.getElementById('adminPanel').classList.add('hidden');
-    document.getElementById('adminAuthBox').classList.remove('hidden');
-    document.getElementById('adminPass').value = '';
-    render(); syncNavigationUI(); alert('এডমিন লগআউট সফল হয়েছে!');
+    
+    // Clear navigation history of any admin panel sessions so back button cannot re-enter
+    navHistoryStack = navHistoryStack.filter(s => s.type !== 'ADMIN_PANEL');
+
+    document.getElementById('adminHeaderActions')?.classList.add('hidden');
+    document.getElementById('adminPanel')?.classList.add('hidden');
+    document.getElementById('adminAuthBox')?.classList.remove('hidden');
+    if(document.getElementById('adminPass')) document.getElementById('adminPass').value = '';
+    
+    closeAllModalsSilent();
+    render(); 
+    syncNavigationUI(); 
+    alert('এডমিন প্যানেল থেকে সফলভাবে লগআউট হয়েছে!');
   }
 }
 
@@ -1844,27 +2443,39 @@ function renderAnalytics(){
   let totalRevenueEarned = 0;
   let totalCostOfSoldItems = 0;
 
-  // Process Products
+  let totalCostSum = 0;
+  let totalPriceSum = 0;
+  let totalUnitProfitSum = 0;
+  let totalEarnedSum = 0;
+
+  // Track sold counts dynamically per product from non-cancelled orders
+  const productOrderSoldMap = {};
+  orders.forEach(ord => {
+    if(ord.status !== 'বাতিল (Cancelled)'){
+      totalRevenueEarned += Number(ord.grandTotal || ord.subtotal || 0);
+      (ord.items || []).forEach(it => {
+        const prod = products.find(p => String(p.id) === String(it.id) || p.name.trim().toLowerCase() === (it.name || '').trim().toLowerCase());
+        const realIdStr = prod ? String(prod.id) : String(it.id);
+        const qty = Number(it.qty || 1);
+        productOrderSoldMap[realIdStr] = (productOrderSoldMap[realIdStr] || 0) + qty;
+
+        const costPrice = prod ? Number(prod.costPrice || 0) : 0;
+        totalCostOfSoldItems += (costPrice * qty);
+      });
+    }
+  });
+
+  // Process Products for Analytics Cards
   products.forEach(p => {
-    const stock = Number(p.stock || 0);
-    const sold = Number(p.soldCount || 0);
+    const stock = Number(p.stock !== undefined && p.stock !== null ? p.stock : 0);
+    const pIdStr = String(p.id);
+    const orderSold = productOrderSoldMap[pIdStr] || 0;
+    const sold = Math.max(Number(p.soldCount || 0), orderSold);
     const cost = Number(p.costPrice || 0);
     
     totalStockCount += stock;
     totalSoldCount += sold;
     totalStockInvestment += (cost * stock);
-  });
-
-  // Process non-cancelled orders for accurate sales revenue & profit
-  orders.forEach(ord => {
-    if(ord.status !== 'বাতিল (Cancelled)'){
-      totalRevenueEarned += Number(ord.grandTotal || ord.subtotal || 0);
-      (ord.items || []).forEach(it => {
-        const prod = products.find(p => p.id === it.id);
-        const costPrice = prod ? Number(prod.costPrice || 0) : 0;
-        totalCostOfSoldItems += (costPrice * Number(it.qty || 1));
-      });
-    }
   });
 
   const netProfit = totalRevenueEarned - totalCostOfSoldItems;
@@ -1879,7 +2490,7 @@ function renderAnalytics(){
       <div style="font-size:24px;font-weight:bold;color:#2e7d32;margin-top:5px;">${totalSoldCount} টি</div>
     </div>
     <div style="background:#1a1a24;padding:18px;border-radius:12px;border:1px solid var(--border);">
-      <div style="font-size:13px;color:var(--muted);"><i class="fa-solid fa-warehouse"></i> বর্তমান মোট স্টক</div>
+      <div style="font-size:13px;color:var(--muted);"><i class="fa-solid fa-warehouse"></i> বর্তমান মোট স্টক (অবশিষ্ট স্টক)</div>
       <div style="font-size:24px;font-weight:bold;color:#0288d1;margin-top:5px;">${totalStockCount} টি</div>
     </div>
     <div style="background:#1a1a24;padding:18px;border-radius:12px;border:1px solid var(--border);">
@@ -1896,25 +2507,33 @@ function renderAnalytics(){
     </div>
   `;
 
-  // Build Products Summary Table
+  // Build Products Summary Table with Sales, Remaining Stock & Total Profit Calculations
   let tableRows = '';
   products.forEach((p, idx) => {
     const cost = Number(p.costPrice || 0);
     const price = Number(p.price || 0);
     const unitProfit = price - cost;
-    const sold = Number(p.soldCount || 0);
-    const stock = Number(p.stock || 0);
+    const pIdStr = String(p.id);
+    const orderSold = productOrderSoldMap[pIdStr] || 0;
+    const sold = Math.max(Number(p.soldCount || 0), orderSold);
+    const stock = Number(p.stock !== undefined && p.stock !== null ? p.stock : 0);
     const totalEarned = unitProfit * sold;
-    const thumb = (p.images && p.images.length > 0) ? p.images[0] : 'https://via.placeholder.com/40';
+
+    totalCostSum += cost;
+    totalPriceSum += price;
+    totalUnitProfitSum += unitProfit;
+    totalEarnedSum += totalEarned;
+
+    const firstImgUrl = (p.images && p.images.length > 0) ? parseMediaUrl(p.images[0]).url : 'https://via.placeholder.com/40';
 
     tableRows += `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:10px;"><img src="${thumb}" style="width:35px;height:35px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px;"> <strong>${p.name}</strong></td>
+        <td style="padding:10px;"><img src="${firstImgUrl}" style="width:35px;height:35px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px;"> <strong>${p.name}</strong></td>
         <td style="padding:10px;">৳ ${cost}</td>
         <td style="padding:10px;">৳ ${price}</td>
         <td style="padding:10px;color:${unitProfit>=0?'#2e7d32':'#b00020'};"><strong>৳ ${unitProfit}</strong></td>
-        <td style="padding:10px;"><span class="badge badge-in-stock">${sold} টি</span></td>
-        <td style="padding:10px;"><span class="badge ${stock>0?'badge-pre-order':'badge-out-of-stock'}">${stock} টি</span></td>
+        <td style="padding:10px;text-align:center;"><span class="badge badge-in-stock" style="position:static;display:inline-block;font-size:13px;font-weight:bold;">${sold} টি</span></td>
+        <td style="padding:10px;text-align:center;"><span class="badge ${stock>0?'badge-pre-order':'badge-out-of-stock'}" style="position:static;display:inline-block;font-size:13px;font-weight:bold;">${stock} টি</span></td>
         <td style="padding:10px;color:var(--gold);"><strong>৳ ${totalEarned}</strong></td>
       </tr>
     `;
@@ -1928,30 +2547,104 @@ function renderAnalytics(){
           <th style="padding:10px;">ক্রয়মূল্য</th>
           <th style="padding:10px;">বিক্রয়মূল্য</th>
           <th style="padding:10px;">লাভ/পিস</th>
-          <th style="padding:10px;">বিক্রি হয়েছে</th>
-          <th style="padding:10px;">অবশিষ্ট স্টক</th>
+          <th style="padding:10px;text-align:center;">বিক্রি হয়েছে</th>
+          <th style="padding:10px;text-align:center;">অবশিষ্ট স্টক</th>
           <th style="padding:10px;">অর্জিত মোট লাভ</th>
         </tr>
       </thead>
       <tbody>
         ${tableRows.length > 0 ? tableRows : '<tr><td colspan="7" style="padding:15px;text-align:center;">কোনো পণ্য পাওয়া যায়নি।</td></tr>'}
       </tbody>
+      ${tableRows.length > 0 ? `
+      <tfoot>
+        <tr style="border-top:2px solid var(--gold);background:#101018;font-weight:bold;color:var(--gold);">
+          <td style="padding:12px;"><strong>সর্বমোট (Total Summary)</strong></td>
+          <td style="padding:12px;">৳ ${totalCostSum}</td>
+          <td style="padding:12px;">৳ ${totalPriceSum}</td>
+          <td style="padding:12px;color:#2e7d32;">৳ ${totalUnitProfitSum}</td>
+          <td style="padding:12px;text-align:center;"><span class="badge badge-in-stock" style="position:static;display:inline-block;font-size:13px;font-weight:bold;">${totalSoldCount} টি</span></td>
+          <td style="padding:12px;text-align:center;"><span class="badge badge-pre-order" style="position:static;display:inline-block;font-size:13px;font-weight:bold;">${totalStockCount} টি</span></td>
+          <td style="padding:12px;color:var(--gold);font-size:15px;"><strong>৳ ${totalEarnedSum}</strong></td>
+        </tr>
+      </tfoot>
+      ` : ''}
     </table>
   `;
 }
 
-// HANDLE MULTIPLE IMAGE FILES UPLOAD
+// ADMIN IMAGE MANAGEMENT WITH OPTIONAL IMAGE NAMES
+let adminImageItems = []; // Array of objects: [{ url: '...', name: '...' }]
+
+function renderAdminImagePreviewList(){
+  const box = document.getElementById('adminImagePreviewList');
+  if(!box) return;
+  if(adminImageItems.length === 0){
+    box.innerHTML = '<p style="color:var(--muted);font-size:12px;margin:4px 0;text-align:center;">এখনো কোনো ছবি যুক্ত করা হয়নি।</p>';
+    return;
+  }
+
+  box.innerHTML = adminImageItems.map((item, idx) => {
+    const media = parseMediaUrl(item.url);
+    const thumbHtml = media.type === 'image'
+      ? `<img src="${media.url}" style="width:45px;height:45px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);flex-shrink:0;">`
+      : `<div style="width:45px;height:45px;background:#000;border-radius:6px;border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;"><i class="fa-solid fa-film"></i></div>`;
+
+    return `
+      <div style="display:flex;align-items:center;gap:10px;background:#1e1e28;padding:8px 10px;border-radius:8px;border:1px solid #2e2e3a;">
+        ${thumbHtml}
+        <div style="flex:1;">
+          <input type="text" placeholder="ছবির অপショナル নাম/ক্যাপশন (যেমন: লাল কালার, ফ্রন্ট ভিউ)" value="${item.name || ''}" oninput="updateAdminImageName(${idx}, this.value)" style="width:100%;padding:7px 10px;margin:0;font-size:13px;background:#121218;color:var(--text);border:1px solid #333;border-radius:6px;">
+        </div>
+        <button type="button" class="btn-danger" onclick="removeAdminImageItem(${idx})" style="width:auto;padding:6px 12px;margin:0;font-size:12px;" title="ছবি মুছে ফেলুন">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateAdminImageName(idx, value){
+  if(adminImageItems[idx]){
+    adminImageItems[idx].name = value;
+  }
+}
+
+function removeAdminImageItem(idx){
+  adminImageItems.splice(idx, 1);
+  renderAdminImagePreviewList();
+}
+
+function addUrlsToAdminImageList(){
+  const textarea = document.getElementById('pimgUrls');
+  if(!textarea) return;
+  const raw = textarea.value.trim();
+  if(!raw) return;
+
+  const urls = raw.split(',').map(u => u.trim()).filter(Boolean);
+  urls.forEach(u => {
+    adminImageItems.push({ url: u, name: '' });
+  });
+
+  textarea.value = '';
+  renderAdminImagePreviewList();
+}
+
 async function handleImageUpload(e){
   const files = Array.from(e.target.files || []);
-  uploadedImagesBase64 = [];
   if(!files.length) return;
   try {
-    uploadedImagesBase64 = await Promise.all(files.map(file => new Promise((resolve, reject) => {
+    const base64List = await Promise.all(files.map(file => new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
       reader.onerror = () => reject(new Error('ছবি পড়া যায়নি'));
       reader.readAsDataURL(file);
     })));
+
+    base64List.forEach(b64 => {
+      adminImageItems.push({ url: b64, name: '' });
+    });
+    renderAdminImagePreviewList();
+    e.target.value = '';
   } catch(err){ alert(err.message); }
 }
 
@@ -1986,13 +2679,39 @@ async function saveProduct(e){
   const status = document.getElementById('pstatus').value;
   const expiry = document.getElementById('pexpiry').value;
 
-  const urlInput = document.getElementById('pimgUrls').value.trim();
-  let urlList = urlInput ? urlInput.split(',').map(u => u.trim()).filter(Boolean) : [];
+  // Check if unadded URLs exist in textarea
+  const remainingUrls = document.getElementById('pimgUrls') ? document.getElementById('pimgUrls').value.trim() : '';
+  if(remainingUrls){
+    remainingUrls.split(',').map(u => u.trim()).filter(Boolean).forEach(u => {
+      adminImageItems.push({ url: u, name: '' });
+    });
+    if(document.getElementById('pimgUrls')) document.getElementById('pimgUrls').value = '';
+  }
 
-  let finalImages = [...uploadedImagesBase64, ...urlList];
-  if(supabaseClient && cloudReady && uploadedImagesBase64.length){
-    try { finalImages = [...await uploadProductImages(uploadedImagesBase64), ...urlList]; }
-    catch(err){ alert('ছবি আপলোড হয়নি: ' + err.message); return; }
+  if(adminImageItems.length === 0){
+    adminImageItems = [{ url: "https://via.placeholder.com/300?text=" + encodeURIComponent(name), name: '' }];
+  }
+
+  let finalImages = [];
+  if(supabaseClient && cloudReady){
+    for(const item of adminImageItems){
+      if(typeof item.url === 'string' && item.url.startsWith('data:image')){
+        try {
+          const uploadedUrls = await uploadProductImages([item.url]);
+          if(uploadedUrls && uploadedUrls.length > 0){
+            finalImages.push({ url: uploadedUrls[0], name: item.name || '' });
+          } else {
+            finalImages.push({ url: item.url, name: item.name || '' });
+          }
+        } catch(err){
+          finalImages.push({ url: item.url, name: item.name || '' });
+        }
+      } else {
+        finalImages.push({ url: item.url || item, name: item.name || '' });
+      }
+    }
+  } else {
+    finalImages = adminImageItems.map(item => ({ url: item.url || item, name: item.name || '' }));
   }
 
   if(id){
@@ -2009,13 +2728,10 @@ async function saveProduct(e){
       prod.icon = icon;
       prod.status = stock === 0 ? 'Out of Stock' : status;
       prod.expiry = expiry;
-      if(finalImages.length > 0) prod.images = finalImages;
+      prod.images = finalImages;
     }
   } else {
     // NEW
-    if(finalImages.length === 0){
-      finalImages = ["https://via.placeholder.com/300?text=" + encodeURIComponent(name)];
-    }
     products.push({
       id: Date.now(),
       name, costPrice, price, unitProfit, profitMargin, stock,
@@ -2040,6 +2756,8 @@ function resetProductForm(){
   document.getElementById('customCatBox').classList.add('hidden');
   document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-plus-circle"></i> নতুন পণ্য যোগ / সম্পাদনা করুন';
   uploadedImagesBase64 = [];
+  adminImageItems = [];
+  renderAdminImagePreviewList();
   calculateLiveProductProfit('price');
 }
 
@@ -2069,7 +2787,15 @@ function editProduct(id){
   document.getElementById('picon').value = p.icon || '📦';
   document.getElementById('pstatus').value = p.status || 'In Stock';
   document.getElementById('pexpiry').value = p.expiry || '';
-  document.getElementById('pimgUrls').value = (p.images || []).join(', ');
+  adminImageItems = (p.images || []).map(img => {
+    if(typeof img === 'object' && img !== null){
+      return { url: img.url || '', name: img.name || '' };
+    } else {
+      return { url: String(img), name: '' };
+    }
+  });
+  renderAdminImagePreviewList();
+  document.getElementById('pimgUrls').value = '';
   document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> পণ্য সম্পাদনা করুন';
   calculateLiveProductProfit('price');
   window.scrollTo({top:0, behavior:'smooth'});
@@ -2100,10 +2826,14 @@ function renderOrders(){
   orders.slice().reverse().forEach(ord => {
     let itemsHtml = '';
     (ord.items || []).forEach(it => {
-      const img = (it.images && it.images.length > 0) ? it.images[0] : 'https://via.placeholder.com/60?text=No+Img';
+      const selectedMediaUrl = it.selectedVariant || it.selectedImage || (it.images && it.images.length > 0 ? it.images[0] : '');
+      const itemMedia = selectedMediaUrl ? parseMediaUrl(selectedMediaUrl) : null;
+      const itemImageHtml = itemMedia && itemMedia.type === 'image'
+        ? `<img src="${itemMedia.url}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);flex-shrink:0;" alt="${it.name}">`
+        : `<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:#000;color:var(--gold);border:1px solid var(--gold);border-radius:6px;flex-shrink:0;"><i class="fa-solid fa-${itemMedia && (itemMedia.type === 'video' || itemMedia.type === 'youtube') ? 'film' : 'image'}"></i></div>`;
       itemsHtml += `
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;background:#14141a;padding:8px 12px;border-radius:8px;border:1px solid #282832;">
-          <img src="${img}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);" alt="${it.name}">
+          ${itemImageHtml}
           <div style="flex:1;">
             <strong style="color:var(--gold);font-size:15px;">${it.name}</strong><br>
             <span style="font-size:13px;color:var(--muted);">পরিমাণ: <strong>${it.qty || 1}</strong> টি | একক মূল্য: ৳${it.price}</span>
@@ -2306,12 +3036,14 @@ async function updateOrderStatus(orderId, newStatus){
 // CUSTOMER ORDERS MODAL FUNCTIONS
 async function openCustomerOrdersModal(){
   recordNavState();
-  renderCustomerOrders();
   const modal = document.getElementById('customerOrdersModal');
   if(modal) modal.style.display = 'flex';
   syncNavigationUI();
   if(modal) modal.scrollTop = 0;
+
+  await loadCustomerOrdersFromCloud();
   await refreshCustomerOrderStatuses();
+  renderCustomerOrders();
 }
 
 function closeCustomerOrdersModal(){
@@ -2329,7 +3061,7 @@ function renderCustomerOrders(){
     return;
   }
 
-  const myOrders = orders.filter(o => o.phone === userPhone);
+  const myOrders = orders.filter(o => String(o.phone || '') === String(userPhone));
 
   if(myOrders.length === 0){
     box.innerHTML = '<p style="color:var(--muted);text-align:center;padding:25px;font-size:15px;"><i class="fa-solid fa-basket-shopping" style="font-size:30px;display:block;margin-bottom:10px;color:var(--gold);"></i>আপনি এখনো কোনো অর্ডার করেননি।</p>';
@@ -2339,10 +3071,14 @@ function renderCustomerOrders(){
   myOrders.slice().reverse().forEach(ord => {
     let itemsHtml = '';
     (ord.items || []).forEach(it => {
-      const img = (it.images && it.images.length > 0) ? it.images[0] : 'https://via.placeholder.com/50?text=No+Img';
+      const itemMediaUrl = it.selectedVariant || it.selectedImage || (it.images && it.images.length > 0 ? it.images[0] : '');
+      const itemMedia = itemMediaUrl ? parseMediaUrl(itemMediaUrl) : null;
+      const itemImageHtml = itemMedia && itemMedia.type === 'image'
+        ? `<img src="${itemMedia.url}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);flex-shrink:0;" alt="${it.name}">`
+        : `<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:#000;color:var(--gold);border:1px solid var(--gold);border-radius:6px;flex-shrink:0;"><i class="fa-solid fa-${itemMedia && (itemMedia.type === 'video' || itemMedia.type === 'youtube') ? 'film' : 'image'}"></i></div>`;
       itemsHtml += `
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;background:#14141a;padding:8px 12px;border-radius:8px;border:1px solid #282832;">
-          <img src="${img}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);" alt="${it.name}">
+          ${itemImageHtml}
           <div style="flex:1;">
             <strong style="color:var(--gold);font-size:14px;">${it.name}</strong><br>
             <small style="color:var(--muted);">পরিমাণ: <strong>${it.qty || 1}</strong> টি | একক মূল্য: ৳${it.price}</small>
@@ -2408,7 +3144,9 @@ function printOrderMemo(orderId){
 
   let itemsRows = '';
   (ord.items || []).forEach((it, idx) => {
-    const img = (it.images && it.images.length > 0) ? it.images[0] : 'https://via.placeholder.com/40';
+    const selectedMediaUrl = it.selectedVariant || it.selectedImage || (it.images && it.images.length > 0 ? it.images[0] : 'https://via.placeholder.com/40');
+    const itemMedia = parseMediaUrl(selectedMediaUrl);
+    const img = itemMedia ? itemMedia.url : selectedMediaUrl;
     itemsRows += `
       <tr>
         <td>${idx + 1}</td>
@@ -2620,6 +3358,36 @@ async function loadProductsFromCloud(){
     products = data.map(row => row.data).filter(Boolean);
     localStorage.setItem('products', JSON.stringify(products));
   }
+}
+
+async function loadCustomerOrdersFromCloud(){
+  if(!cloudReady) return;
+  const userPhone = localStorage.getItem('userPhone');
+  if(!userPhone) return;
+
+  const { data, error } = await supabaseClient.from('shop_orders')
+    .select('data,access_token')
+    .eq('phone', String(userPhone));
+
+  if(error){
+    console.error('Customer orders load failed:', error.message);
+    return;
+  }
+  if(!data) return;
+
+  const cloudOrders = data.map(row => {
+    const order = row.data || {};
+    if(row.access_token) order.accessToken = row.access_token;
+    return order;
+  }).filter(order => String(order.phone || '') === String(userPhone));
+
+  const byId = new Map();
+  orders.filter(order => String(order.phone || '') === String(userPhone))
+    .forEach(order => byId.set(String(order.orderId), order));
+  cloudOrders.forEach(order => byId.set(String(order.orderId), order));
+  const otherUsersOrders = orders.filter(order => String(order.phone || '') !== String(userPhone));
+  orders = [...otherUsersOrders, ...byId.values()];
+  localStorage.setItem('orders', JSON.stringify(orders));
 }
 
 async function loadOrdersFromCloud(){
