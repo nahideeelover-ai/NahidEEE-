@@ -55,7 +55,7 @@ header small{color:var(--muted);font-size:13px;}
 .menu-btn{
   position:absolute;
   right:20px;
-  top:170px;
+  top:165px;
   font-size:14px;
   font-weight:bold;
   cursor:pointer;
@@ -1105,6 +1105,47 @@ function parseMediaUrl(item) {
   // IMAGE
   return { type: 'image', url: trimmed, name: mediaName };
 }
+
+// GET IMAGE NAME / CODE FOR ORDER ITEMS
+function getItemImageName(it, itemMediaUrl) {
+  if (!it) return '';
+  const parsed = itemMediaUrl ? parseMediaUrl(itemMediaUrl) : null;
+  let name = parsed ? (parsed.name || '') : '';
+  
+  const targetUrl = parsed ? parsed.url : (typeof itemMediaUrl === 'string' ? itemMediaUrl : '');
+
+  if (!name && it.images && Array.isArray(it.images)) {
+    for (const img of it.images) {
+      const p = parseMediaUrl(img);
+      if (p.url && targetUrl && p.url === targetUrl) {
+        if (p.name) { name = p.name; break; }
+      }
+    }
+    if (!name && it.images.length > 0) {
+      const p = parseMediaUrl(it.images[0]);
+      if (p.name) name = p.name;
+    }
+  }
+
+  if (!name && typeof products !== 'undefined' && Array.isArray(products)) {
+    const prod = products.find(p => String(p.id) === String(it.id) || (p.name && p.name.trim().toLowerCase() === (it.name || '').trim().toLowerCase()));
+    if (prod && prod.images && Array.isArray(prod.images)) {
+      for (const img of prod.images) {
+        const p = parseMediaUrl(img);
+        if (p.url && targetUrl && p.url === targetUrl) {
+          if (p.name) { name = p.name; break; }
+        }
+      }
+      if (!name && prod.images.length > 0) {
+        const p = parseMediaUrl(prod.images[0]);
+        if (p.name) name = p.name;
+      }
+    }
+  }
+  
+  return name;
+}
+
 
 // RENDER CATEGORY PILLS
 function renderCategoryPills(activeCat = '') {
@@ -2828,14 +2869,20 @@ function renderOrders(){
     (ord.items || []).forEach(it => {
       const selectedMediaUrl = it.selectedVariant || it.selectedImage || (it.images && it.images.length > 0 ? it.images[0] : '');
       const itemMedia = selectedMediaUrl ? parseMediaUrl(selectedMediaUrl) : null;
+      const imgName = getItemImageName(it, selectedMediaUrl);
       const itemImageHtml = itemMedia && itemMedia.type === 'image'
         ? `<img src="${itemMedia.url}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);flex-shrink:0;" alt="${it.name}">`
         : `<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:#000;color:var(--gold);border:1px solid var(--gold);border-radius:6px;flex-shrink:0;"><i class="fa-solid fa-${itemMedia && (itemMedia.type === 'video' || itemMedia.type === 'youtube') ? 'film' : 'image'}"></i></div>`;
+      
+      const imgNameBadge = imgName
+        ? `<br><small style="color:var(--gold);font-weight:bold;display:inline-block;margin-top:3px;background:rgba(212,175,55,0.15);padding:2px 8px;border-radius:4px;border:1px solid rgba(212,175,55,0.3);"><i class="fa-solid fa-tag"></i> ছবির নাম/কোড: ${imgName}</small>`
+        : '';
+
       itemsHtml += `
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;background:#14141a;padding:8px 12px;border-radius:8px;border:1px solid #282832;">
           ${itemImageHtml}
           <div style="flex:1;">
-            <strong style="color:var(--gold);font-size:15px;">${it.name}</strong><br>
+            <strong style="color:var(--gold);font-size:15px;">${it.name}</strong>${imgNameBadge}<br>
             <span style="font-size:13px;color:var(--muted);">পরিমাণ: <strong>${it.qty || 1}</strong> টি | একক মূল্য: ৳${it.price}</span>
           </div>
           <div style="font-size:15px;font-weight:bold;color:#fff;">৳${Number(it.price) * (it.qty || 1)}</div>
@@ -3073,14 +3120,20 @@ function renderCustomerOrders(){
     (ord.items || []).forEach(it => {
       const itemMediaUrl = it.selectedVariant || it.selectedImage || (it.images && it.images.length > 0 ? it.images[0] : '');
       const itemMedia = itemMediaUrl ? parseMediaUrl(itemMediaUrl) : null;
+      const imgName = getItemImageName(it, itemMediaUrl);
       const itemImageHtml = itemMedia && itemMedia.type === 'image'
         ? `<img src="${itemMedia.url}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--gold);flex-shrink:0;" alt="${it.name}">`
         : `<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:#000;color:var(--gold);border:1px solid var(--gold);border-radius:6px;flex-shrink:0;"><i class="fa-solid fa-${itemMedia && (itemMedia.type === 'video' || itemMedia.type === 'youtube') ? 'film' : 'image'}"></i></div>`;
+      
+      const imgNameBadge = imgName
+        ? `<br><small style="color:var(--gold);font-weight:bold;display:inline-block;margin-top:2px;background:rgba(212,175,55,0.15);padding:2px 8px;border-radius:4px;border:1px solid rgba(212,175,55,0.3);"><i class="fa-solid fa-tag"></i> ছবির নাম/কোড: ${imgName}</small>`
+        : '';
+
       itemsHtml += `
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;background:#14141a;padding:8px 12px;border-radius:8px;border:1px solid #282832;">
           ${itemImageHtml}
           <div style="flex:1;">
-            <strong style="color:var(--gold);font-size:14px;">${it.name}</strong><br>
+            <strong style="color:var(--gold);font-size:14px;">${it.name}</strong>${imgNameBadge}<br>
             <small style="color:var(--muted);">পরিমাণ: <strong>${it.qty || 1}</strong> টি | একক মূল্য: ৳${it.price}</small>
           </div>
           <div style="font-size:14px;font-weight:bold;color:#fff;">৳${Number(it.price) * (it.qty || 1)}</div>
@@ -3147,10 +3200,12 @@ function printOrderMemo(orderId){
     const selectedMediaUrl = it.selectedVariant || it.selectedImage || (it.images && it.images.length > 0 ? it.images[0] : 'https://via.placeholder.com/40');
     const itemMedia = parseMediaUrl(selectedMediaUrl);
     const img = itemMedia ? itemMedia.url : selectedMediaUrl;
+    const imgName = getItemImageName(it, selectedMediaUrl);
+    const imgNameText = imgName ? `<br><small style="color:#555;font-weight:bold;">[ছবির নাম/কোড: ${imgName}]</small>` : '';
     itemsRows += `
       <tr>
         <td>${idx + 1}</td>
-        <td><img src="${img}" style="width:35px;height:35px;object-fit:cover;vertical-align:middle;margin-right:6px;border-radius:4px;"> ${it.name}</td>
+        <td><img src="${img}" style="width:35px;height:35px;object-fit:cover;vertical-align:middle;margin-right:6px;border-radius:4px;"> ${it.name}${imgNameText}</td>
         <td>${ord.color || '-'}</td>
         <td>${it.qty || 1}</td>
         <td>৳ ${Number(it.price) * (it.qty || 1)}</td>
@@ -3600,4 +3655,4 @@ syncNavigationUI();
 </div>
 
 </body>
-</html>
+            </html>
