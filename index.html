@@ -1658,6 +1658,7 @@ async function submitOrder(e){
 
   const newOrder = {
     orderId: 'ORD-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)),
+    accessToken: (crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16))),
     date: new Date().toLocaleString('bn-BD'),
     phone: phone,
     name: name,
@@ -2225,7 +2226,15 @@ async function completeOrder(orderId){
     localStorage.setItem('orders', JSON.stringify(orders));
     
     await syncProductsToCloud();
-    await syncOrdersToCloud();
+    const orderSaved = await saveSingleOrderToCloud(ord);
+    if(!orderSaved){
+      alert('স্টক/বিক্রির তথ্য স্থানীয়ভাবে পরিবর্তিত হয়েছে, কিন্তু অর্ডারের Delivered স্ট্যাটাস Supabase-এ সংরক্ষণ করা যায়নি। ইন্টারনেট ও অ্যাডমিন লগইন যাচাই করুন।');
+      render();
+      renderOrders();
+      renderCustomerOrders();
+      return;
+    }
+    localStorage.setItem('orders', JSON.stringify(orders));
 
     let alertMsg = 'অর্ডারটি সফলভাবে কমপ্লিট করা হয়েছে!\n';
     if(deductedDetails.length > 0){
@@ -2241,46 +2250,68 @@ async function completeOrder(orderId){
 }
 
 async function deleteOrder(orderId){
-  if(confirm(`আপনি কি নিশ্চিত যে অর্ডারটি (${orderId}) মুছে ফেলতে চান?`)){
-    orders = orders.filter(o => String(o.orderId) !== String(orderId));
-    localStorage.setItem('orders', JSON.stringify(orders));
-    await syncOrdersToCloud();
-    alert('অর্ডারটি সফলভাবে মুছে ফেলা হয়েছে!');
-    renderOrders();
-    renderCustomerOrders();
-    if(typeof renderAnalytics === 'function') renderAnalytics();
+  if(!confirm(`আপনি কি নিশ্চিত যে অর্ডারটি (${orderId}) স্থায়ীভাবে Supabase থেকে মুছে ফেলতে চান?`)) return;
+  if(!cloudReady || !isAdmin){
+    alert('ক্লাউডে স্থায়ীভাবে মুছতে অ্যাডমিন লগইন ও ক্লাউড সংযোগ প্রয়োজন।');
+    return;
   }
+  const { data, error } = await supabaseClient
+    .from('shop_orders').delete().eq('id', String(orderId)).select('id');
+  if(error){
+    alert('Supabase থেকে অর্ডারটি মুছতে ব্যর্থ হয়েছে: ' + error.message);
+    return;
+  }
+  if(!data || data.length !== 1){
+    alert('Supabase-এ অর্ডারটি পাওয়া যায়নি বা মুছে ফেলার অনুমতি নেই। কোনো স্থানীয় তথ্য পরিবর্তন করা হয়নি।');
+    return;
+  }
+  orders = orders.filter(o => String(o.orderId) !== String(orderId));
+  localStorage.setItem('orders', JSON.stringify(orders));
+  alert('অর্ডারটি Supabase ও এই ডিভাইস—উভয় জায়গা থেকে স্থায়ীভাবে মুছে ফেলা হয়েছে।');
+  renderOrders();
+  renderCustomerOrders();
+  if(typeof renderAnalytics === 'function') renderAnalytics();
 }
 
 async function updateOrderStatus(orderId, newStatus){
-  const ord = orders.find(o => o.orderId === orderId);
-  if(ord){
-    if(newStatus === 'ডেলিভারড (Delivered)' && !ord.isCompleted){
-      completeOrder(orderId);
-      return;
-    }
-    ord.status = newStatus;
-    if(newStatus === 'বাতিল (Cancelled)' && !ord.cancelReason){
-      const reason = prompt('অর্ডার বাতিলের কারণ লিখুন:');
-      if(reason) ord.cancelReason = reason;
-    }
-    localStorage.setItem('orders', JSON.stringify(orders));
-    await syncOrdersToCloud();
-    alert('অর্ডার স্ট্যাটাস আপডেট করা হয়েছে!');
-    renderOrders();
-    if(typeof renderAnalytics === 'function') renderAnalytics();
+  const ord = orders.find(o => String(o.orderId) === String(orderId));
+  if(!ord) return;
+  if(newStatus === 'ডেলিভারড (Delivered)' && !ord.isCompleted){
+    await completeOrder(orderId);
+    return;
   }
+  let reason = ord.cancelReason || '';
+  if(newStatus === 'বাতিল (Cancelled)' && !reason){
+    reason = prompt('অর্ডার বাতিলের কারণ লিখুন:') || '';
+  }
+  const oldStatus = ord.status;
+  const oldReason = ord.cancelReason || '';
+  ord.status = newStatus;
+  if(newStatus === 'বাতিল (Cancelled)') ord.cancelReason = reason;
+  const saved = await saveSingleOrderToCloud(ord);
+  if(!saved){
+    ord.status = oldStatus;
+    ord.cancelReason = oldReason;
+    alert('ক্লাউডে স্ট্যাটাস সংরক্ষণ করা যায়নি। আগের স্ট্যাটাস বহাল রাখা হয়েছে।');
+    return;
+  }
+  localStorage.setItem('orders', JSON.stringify(orders));
+  alert('অর্ডার স্ট্যাটাস Supabase-এ সংরক্ষিত হয়েছে।');
+  renderOrders();
+  renderCustomerOrders();
+  if(typeof renderAnalytics === 'function') renderAnalytics();
 }
 
 
 // CUSTOMER ORDERS MODAL FUNCTIONS
-function openCustomerOrdersModal(){
+async function openCustomerOrdersModal(){
   recordNavState();
   renderCustomerOrders();
   const modal = document.getElementById('customerOrdersModal');
   if(modal) modal.style.display = 'flex';
   syncNavigationUI();
   if(modal) modal.scrollTop = 0;
+  await refreshCustomerOrderStatuses();
 }
 
 function closeCustomerOrdersModal(){
@@ -2593,10 +2624,15 @@ async function loadProductsFromCloud(){
 
 async function loadOrdersFromCloud(){
   if(!cloudReady || !isAdmin) return;
-  const { data, error } = await supabaseClient.from('shop_orders').select('data').order('created_at', { ascending: true });
+  const { data, error } = await supabaseClient.from('shop_orders')
+    .select('id,data,access_token').order('created_at', { ascending: true });
   if(error){ console.error('Orders load failed:', error.message); return; }
   if(data){
-    orders = data.map(row => row.data).filter(Boolean);
+    orders = data.map(row => {
+      const order = row.data || {};
+      if(row.access_token) order.accessToken = row.access_token;
+      return order;
+    }).filter(Boolean);
     localStorage.setItem('orders', JSON.stringify(orders));
     renderOrders(); renderCustomerOrders(); renderAnalytics();
   }
@@ -2650,9 +2686,60 @@ async function syncProductsToCloud(){
 }
 
 async function insertOrderToCloud(order){
+  if(!cloudReady) return false;
+  const { error } = await supabaseClient.from('shop_orders').insert({
+    id: String(order.orderId),
+    phone: String(order.phone),
+    access_token: order.accessToken,
+    data: order
+  });
+  if(error){
+    console.error('Order cloud insert failed:', error.message);
+    alert('অর্ডারটি এই ডিভাইসে সংরক্ষিত হয়েছে, তবে ক্লাউডে পাঠানো যায়নি: ' + error.message);
+    return false;
+  }
+  return true;
+}
+
+async function saveSingleOrderToCloud(order){
+  if(!cloudReady || !isAdmin) return false;
+  const { data, error } = await supabaseClient.from('shop_orders')
+    .update({ phone: String(order.phone || ''), access_token: order.accessToken || null, data: order })
+    .eq('id', String(order.orderId)).select('id');
+  if(error){
+    console.error('Single order cloud update failed:', error.message);
+    return false;
+  }
+  return !!(data && data.length === 1);
+}
+
+async function refreshCustomerOrderStatuses(){
   if(!cloudReady) return;
-  const { error } = await supabaseClient.from('shop_orders').insert({ id: String(order.orderId), phone: String(order.phone), data: order });
-  if(error){ console.error('Order cloud insert failed:', error.message); alert('অর্ডারটি এই ডিভাইসে সংরক্ষিত হয়েছে, তবে ক্লাউডে পাঠানো যায়নি: ' + error.message); }
+  const userPhone = localStorage.getItem('userPhone');
+  if(!userPhone) return;
+  const mine = orders.filter(o => String(o.phone) === String(userPhone) && o.accessToken);
+  if(!mine.length) return;
+  let changed = false;
+  for(const order of mine){
+    const { data, error } = await supabaseClient.rpc('get_shop_order_status', {
+      p_order_id: String(order.orderId),
+      p_access_token: order.accessToken
+    });
+    if(error){
+      console.warn('Order status refresh failed:', error.message);
+      continue;
+    }
+    if(data && data.status){
+      order.status = data.status;
+      order.cancelReason = data.cancelReason || '';
+      order.isCompleted = !!data.isCompleted;
+      changed = true;
+    }
+  }
+  if(changed){
+    localStorage.setItem('orders', JSON.stringify(orders));
+    renderCustomerOrders();
+  }
 }
 
 async function syncOrdersToCloud(){
