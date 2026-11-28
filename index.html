@@ -728,6 +728,7 @@ button:hover{
   <div class="modal-content">
     <span class="close-modal" onclick="closeCustomerOrdersModal()">&times;</span>
     <h3 style="color:var(--gold);margin-top:0;"><i class="fa-solid fa-receipt"></i> আমার অর্ডারসমূহ</h3>
+    <div id="customerOrderRefreshStatus" style="font-size:13px;margin-bottom:12px;min-height:20px;"></div>
     <div id="customerOrdersList"></div>
   </div>
 </div>
@@ -1151,7 +1152,7 @@ function showCustomAlert(message, title = 'বিজ্ঞপ্তি', type = 
 
     dialogTitle.innerText = title;
     dialogMessage.innerText = message;
-    cancelBtn.classList.add('hidden');
+    if(cancelBtn) cancelBtn.classList.add('hidden');
     okBtn.innerText = 'ঠিক আছে (OK)';
     
     dialogIcon.className = 'custom-dialog-icon ' + (type || 'info');
@@ -1211,7 +1212,7 @@ function showCustomConfirm(message, title = 'নিশ্চিতকরণ', ty
 
     dialogTitle.innerText = title;
     dialogMessage.innerText = message;
-    cancelBtn.classList.remove('hidden');
+    if(cancelBtn) cancelBtn.classList.remove('hidden');
     cancelBtn.innerText = 'বাতিল (Cancel)';
     okBtn.innerText = 'হ্যাঁ, নিশ্চিত (Confirm)';
     
@@ -1619,7 +1620,7 @@ function selectCurrentSliderVariant() {
       selectedImage: chosenMedia
     };
     selectedCart.push(cartItem);
-    showCustomAlert(`প্রোডাক্ট '${prod.name}'${mediaNameStr}-এর এই নির্দিষ্ট ছবি/ডিজাইনটি আপনার চয়েজে যোগ করতে চাইলে ok or enter press করুন, এবং back button press করে বের হয়ে চেকআউট করুন  !`, 'ছবি নির্বাচন সম্পন্ন', 'success');
+    showCustomAlert(`প্রোডাক্ট '${prod.name}'${mediaNameStr}-এর এই নির্দিষ্ট ছবি/ডিজাইনটি আপনার চয়েজে যোগ করতে ok or enter press করুন এবং back button press করে 🔹চেকআউট🔸 করে আপনার order টি complete  করুন। !`, 'ছবি নির্বাচন সম্পন্ন', 'success');
   } else {
     cartItem.qty = (cartItem.qty || 1) + 1;
     showCustomAlert(`প্রোডাক্ট '${prod.name}'${mediaNameStr}-এর এই নির্দিষ্ট ছবি/ডিজাইনটির পরিমাণ বাড়ানো হয়েছে (মোট: ${cartItem.qty} টি)।`, 'পরিমাণ বৃদ্ধি', 'info');
@@ -1794,42 +1795,47 @@ function restoreState(state) {
 
   const loginBox = document.getElementById('loginBox');
   const shop = document.getElementById('shop');
+  const adminModal = document.getElementById('adminModal');
+  const adminAuthBox = document.getElementById('adminAuthBox');
+  const adminPanel = document.getElementById('adminPanel');
 
   if(state.type === 'LOGIN'){
-    shop.classList.add('hidden');
-    loginBox.classList.remove('hidden');
+    if(shop) shop.classList.add('hidden');
+    if(loginBox) loginBox.classList.remove('hidden');
   } else if(state.type === 'SHOP'){
-    loginBox.classList.add('hidden');
-    shop.classList.remove('hidden');
+    if(loginBox) loginBox.classList.add('hidden');
+    if(shop) shop.classList.remove('hidden');
   } else if(state.type === 'ADMIN_AUTH'){
-    loginBox.classList.add('hidden');
-    shop.classList.remove('hidden');
-    document.getElementById('adminModal').style.display = 'flex';
-    document.getElementById('adminAuthBox').classList.remove('hidden');
-    document.getElementById('adminPanel').classList.add('hidden');
+    if(loginBox) loginBox.classList.add('hidden');
+    if(shop) shop.classList.remove('hidden');
+    if(adminModal) adminModal.style.display = 'flex';
+    if(adminAuthBox) adminAuthBox.classList.remove('hidden');
+    if(adminPanel) adminPanel.classList.add('hidden');
   } else if(state.type === 'ADMIN_PANEL'){
     if(!isAdmin){
-      // Security enforcement: User logged out as admin, prompt admin login box
-      shop.classList.remove('hidden');
-      document.getElementById('adminModal').style.display = 'flex';
-      document.getElementById('adminAuthBox').classList.remove('hidden');
-      document.getElementById('adminPanel').classList.add('hidden');
+      if(shop) shop.classList.remove('hidden');
+      if(adminModal) adminModal.style.display = 'flex';
+      if(adminAuthBox) adminAuthBox.classList.remove('hidden');
+      if(adminPanel) adminPanel.classList.add('hidden');
     } else {
-      shop.classList.remove('hidden');
-      document.getElementById('adminModal').style.display = 'flex';
-      document.getElementById('adminAuthBox').classList.add('hidden');
-      document.getElementById('adminPanel').classList.remove('hidden');
+      if(shop) shop.classList.remove('hidden');
+      if(adminModal) adminModal.style.display = 'flex';
+      if(adminAuthBox) adminAuthBox.classList.add('hidden');
+      if(adminPanel) adminPanel.classList.remove('hidden');
       switchAdminTabSilent(state.tabId || 'analyticsTab');
     }
   } else if(state.type === 'CHECKOUT'){
-    shop.classList.remove('hidden');
-    document.getElementById('checkoutModal').style.display = 'flex';
+    if(shop) shop.classList.remove('hidden');
+    const checkoutModal = document.getElementById('checkoutModal');
+    if(checkoutModal) checkoutModal.style.display = 'flex';
   } else if(state.type === 'CUSTOMER_ORDERS'){
-    shop.classList.remove('hidden');
-    document.getElementById('customerOrdersModal').style.display = 'flex';
+    if(shop) shop.classList.remove('hidden');
+    const customerOrdersModal = document.getElementById('customerOrdersModal');
+    if(customerOrdersModal) customerOrdersModal.style.display = 'flex';
   } else if(state.type === 'IMAGE_SLIDER'){
-    shop.classList.remove('hidden');
-    document.getElementById('imgSliderModal').style.display = 'flex';
+    if(shop) shop.classList.remove('hidden');
+    const imgSliderModal = document.getElementById('imgSliderModal');
+    if(imgSliderModal) imgSliderModal.style.display = 'flex';
   }
 
   syncNavigationUI();
@@ -2145,7 +2151,7 @@ function login(){
 
   localStorage.setItem('userPhone', phone);
   closeAllModalsSilent();
-  document.getElementById('shop').classList.remove('hidden');
+  document.getElementById('shop')?.classList.remove('hidden');
   updateCustomerHeaderUI();
   
   populateCategoryDropdowns();
@@ -2197,9 +2203,9 @@ function toggleCustomCategoryInput(){
   const sel = document.getElementById('pcatSelect').value;
   const customBox = document.getElementById('customCatBox');
   if(sel === '__NEW__'){
-    customBox.classList.remove('hidden');
+    if(customBox) customBox.classList.remove('hidden');
   } else {
-    customBox.classList.add('hidden');
+    if(customBox) customBox.classList.add('hidden');
   }
 }
 
@@ -2569,50 +2575,78 @@ async function submitOrder(e){
   const deliveryCharge = Number(document.getElementById('cDeliveryArea').value);
 
   if(!phone || !name || !address){
-    alert('বাধ্যতামূলক সকল তথ্য প্রদান করুন!');
+    showCustomAlert('বাধ্যতামূলক সকল তথ্য (ফোন, নাম, ঠিকানা) প্রদান করুন!', 'তথ্য অসম্পূর্ণ', 'warning');
     return;
   }
 
   if(blockedUsers.includes(phone)){
-    alert('আপনার নাম্বারটি ব্লক তালিকাভুক্ত থাকায় অর্ডার সম্পাদন করা সম্ভব নয়।');
+    showCustomAlert('আপনার নাম্বারটি ব্লক তালিকাভুক্ত থাকায় অর্ডার সম্পাদন করা সম্ভব নয়।', 'ব্লকড ইউজার', 'danger');
     return;
   }
 
-  let subtotal = 0;
-  selectedCart.forEach(item => subtotal += Number(item.price) * (item.qty || 1));
+  if(!selectedCart || selectedCart.length === 0){
+    showCustomAlert('আপনার চয়েজ কার্টটি খালি! অন্তত একটি পণ্য সিলেক্ট করুন।', 'কার্ট খালি', 'warning');
+    return;
+  }
 
-  const newOrder = {
-    orderId: 'ORD-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)),
-    accessToken: (crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16))),
-    date: new Date().toLocaleString('bn-BD'),
-    phone: phone,
-    name: name,
-    address: address,
-    color: color,
-    comment: comment,
-    deliveryCharge: deliveryCharge,
-    subtotal: subtotal,
-    grandTotal: subtotal + deliveryCharge,
-    status: 'পেন্ডিং (Pending)',
-    items: JSON.parse(JSON.stringify(selectedCart))
-  };
+  const submitBtn = e.target.querySelector('button[type="submit"]') || document.getElementById('btnSubmitOrder');
+  const originalBtnContent = submitBtn ? submitBtn.innerHTML : '<i class="fa-solid fa-paper-plane"></i> অর্ডার সম্পন্ন করুন';
+  
+  if(submitBtn){
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.75';
+    submitBtn.style.cursor = 'wait';
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> আপনার অর্ডারটি প্রসেসিং হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন';
+  }
 
-  // Note: Stock will be deducted automatically when Admin clicks "কমপ্লিট" (Complete)
-  localStorage.setItem('products', JSON.stringify(products));
+  try {
+    let subtotal = 0;
+    selectedCart.forEach(item => subtotal += Number(item.price) * (item.qty || 1));
 
-  orders.push(newOrder);
-  localStorage.setItem('orders', JSON.stringify(orders));
-  await insertOrderToCloud(newOrder);
-  if(isAdmin) renderAnalytics();
+    const newOrder = {
+      orderId: 'ORD-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)),
+      accessToken: (crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16))),
+      date: new Date().toLocaleString('bn-BD'),
+      phone: phone,
+      name: name,
+      address: address,
+      color: color,
+      comment: comment,
+      deliveryCharge: deliveryCharge,
+      subtotal: subtotal,
+      grandTotal: subtotal + deliveryCharge,
+      status: 'পেন্ডিং (Pending)',
+      items: JSON.parse(JSON.stringify(selectedCart))
+    };
 
-  alert('আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে! ধন্যবাদ।');
-  selectedCart = [];
-  updateCartBar();
-  closeCheckoutModal();
-  render();
-  renderCustomerOrders();
-  if(isAdmin) renderOrders();
-          renderCustomerOrders();
+    localStorage.setItem('products', JSON.stringify(products));
+
+    orders.push(newOrder);
+    localStorage.setItem('orders', JSON.stringify(orders));
+    await insertOrderToCloud(newOrder);
+
+    if(isAdmin) renderAnalytics();
+
+    selectedCart = [];
+    updateCartBar();
+    closeCheckoutModal();
+    render();
+
+    await showCustomAlert('🎉 আপনার অর্ডারটি সফলভাবে প্রসেস ও গৃহীত হয়েছে! ধন্যবাদ।', 'অর্ডার সফল', 'success');
+
+    await openCustomerOrdersModal();
+
+  } catch(err) {
+    console.error('Submit order error:', err);
+    showCustomAlert('অর্ডার প্রক্রিয়াকরণে সমস্যা হয়েছে: ' + err.message, 'ত্রুটি', 'danger');
+  } finally {
+    if(submitBtn){
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+      submitBtn.style.cursor = 'pointer';
+      submitBtn.innerHTML = originalBtnContent;
+    }
+  }
 }
 
 // IMAGE CAROUSEL SLIDER MODAL
@@ -2626,13 +2660,13 @@ function openAdminModal(){
 
   document.getElementById('adminModal').style.display = 'flex';
   if(isAdmin){
-    document.getElementById('adminAuthBox').classList.add('hidden');
-    document.getElementById('adminHeaderActions').classList.remove('hidden');
-    document.getElementById('adminPanel').classList.remove('hidden');
+    document.getElementById('adminAuthBox')?.classList.add('hidden');
+    document.getElementById('adminHeaderActions')?.classList.remove('hidden');
+    document.getElementById('adminPanel')?.classList.remove('hidden');
   } else {
-    document.getElementById('adminAuthBox').classList.remove('hidden');
-    document.getElementById('adminHeaderActions').classList.add('hidden');
-    document.getElementById('adminPanel').classList.add('hidden');
+    document.getElementById('adminAuthBox')?.classList.remove('hidden');
+    document.getElementById('adminHeaderActions')?.classList.add('hidden');
+    document.getElementById('adminPanel')?.classList.add('hidden');
   }
   syncNavigationUI();
   document.getElementById('adminModal').scrollTop = 0;
@@ -2656,9 +2690,9 @@ async function adminLogin(){
     return;
   }
   isAdmin = true;
-  document.getElementById('adminAuthBox').classList.add('hidden');
-  document.getElementById('adminHeaderActions').classList.remove('hidden');
-  document.getElementById('adminPanel').classList.remove('hidden');
+  document.getElementById('adminAuthBox')?.classList.add('hidden');
+  document.getElementById('adminHeaderActions')?.classList.remove('hidden');
+  document.getElementById('adminPanel')?.classList.remove('hidden');
   await loadOrdersFromCloud();
   subscribeSupabaseChanges();
   if(products.length && cloudReady) await syncProductsToCloud();
@@ -2689,12 +2723,12 @@ async function adminLogout(){
 function switchAdminTab(tabId, btn){
   recordNavState();
 
-  document.getElementById('analyticsTab').classList.add('hidden');
-  document.getElementById('productsTab').classList.add('hidden');
-  document.getElementById('ordersTab').classList.add('hidden');
-  document.getElementById('usersTab').classList.add('hidden');
-  document.getElementById('settingsTab').classList.add('hidden');
-  document.getElementById(tabId).classList.remove('hidden');
+  document.getElementById('analyticsTab')?.classList.add('hidden');
+  document.getElementById('productsTab')?.classList.add('hidden');
+  document.getElementById('ordersTab')?.classList.add('hidden');
+  document.getElementById('usersTab')?.classList.add('hidden');
+  document.getElementById('settingsTab')?.classList.add('hidden');
+  document.getElementById(tabId)?.classList.remove('hidden');
 
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -3068,7 +3102,7 @@ async function saveProduct(e){
 function resetProductForm(){
   document.getElementById('productForm').reset();
   document.getElementById('editProductId').value = '';
-  document.getElementById('customCatBox').classList.add('hidden');
+  document.getElementById('customCatBox')?.classList.add('hidden');
   document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-plus-circle"></i> নতুন পণ্য যোগ / সম্পাদনা করুন';
   uploadedImagesBase64 = [];
   adminImageItems = [];
@@ -3092,10 +3126,10 @@ function editProduct(id){
   const pcatSelect = document.getElementById('pcatSelect');
   if(Array.from(pcatSelect.options).some(o => o.value === p.category)){
     pcatSelect.value = p.category;
-    document.getElementById('customCatBox').classList.add('hidden');
+    document.getElementById('customCatBox')?.classList.add('hidden');
   } else {
     pcatSelect.value = '__NEW__';
-    document.getElementById('customCatBox').classList.remove('hidden');
+    document.getElementById('customCatBox')?.classList.remove('hidden');
     document.getElementById('pcatCustom').value = p.category || '';
   }
 
@@ -3129,6 +3163,33 @@ async function deleteProduct(id){
 }
 
 // RENDER ADMIN ORDERS & PRINT INVOICE WITH PRODUCT THUMBNAILS & GOOGLE MAPS NAVIGATION
+
+async function saveCancelReason(orderId){
+  const input = document.getElementById('cancelReasonInput_' + orderId);
+  const reason = input ? input.value.trim() : '';
+  const ord = orders.find(o => String(o.orderId) === String(orderId));
+  if(!ord) return;
+
+  const oldStatus = ord.status;
+  const oldReason = ord.cancelReason || '';
+
+  ord.cancelReason = reason;
+  ord.status = 'বাতিল (Cancelled)';
+
+  const saved = await saveSingleOrderToCloud(ord);
+  if(!saved){
+    ord.status = oldStatus;
+    ord.cancelReason = oldReason;
+    showCustomAlert('ক্লাউডে অর্ডারের বাতিলের কারণ সংরক্ষণ করা যায়নি।', 'ব্যর্থ', 'danger');
+    return;
+  }
+  localStorage.setItem('orders', JSON.stringify(orders));
+  showCustomAlert('অর্ডারটি বাতিল করা হয়েছে এবং বাতিলের কারণ Supabase-এ সেভ করা হয়েছে।', 'বাতিল সম্পন্ন', 'success');
+  renderOrders();
+  renderCustomerOrders();
+  if(typeof renderAnalytics === 'function') renderAnalytics();
+}
+
 function renderOrders(){
   const box = document.getElementById('adminOrderList');
   box.innerHTML = '';
@@ -3362,9 +3423,26 @@ async function openCustomerOrdersModal(){
   syncNavigationUI();
   if(modal) modal.scrollTop = 0;
 
-  await loadCustomerOrdersFromCloud();
-  await refreshCustomerOrderStatuses();
   renderCustomerOrders();
+
+  if(cloudReady){
+    const refreshIndicator = document.getElementById('customerOrderRefreshStatus');
+    if(refreshIndicator) {
+      refreshIndicator.innerHTML = '<span style="color:var(--gold);display:inline-flex;align-items:center;gap:6px;background:rgba(212,175,55,0.1);padding:4px 12px;border-radius:6px;border:1px solid rgba(212,175,55,0.3);"><i class="fa-solid fa-spinner fa-spin"></i> ক্লাউড থেকে পণ্য ও অর্ডার স্ট্যাটাস রিফ্রেশ হচ্ছে...</span>';
+    }
+
+    await Promise.all([
+      loadProductsFromCloud(),
+      refreshCustomerOrderStatuses()
+    ]);
+
+    if(refreshIndicator) {
+      refreshIndicator.innerHTML = '<span style="color:var(--success);display:inline-flex;align-items:center;gap:6px;background:rgba(46,125,50,0.15);padding:4px 12px;border-radius:6px;border:1px solid rgba(46,125,50,0.3);"><i class="fa-solid fa-circle-check"></i> তথ্য সফলভাবে রিফ্রেশ সম্পন্ন হয়েছে</span>';
+      setTimeout(() => { if(refreshIndicator) refreshIndicator.innerHTML = ''; }, 2500);
+    }
+    renderCustomerOrders();
+    render();
+  }
 }
 
 function closeCustomerOrdersModal(){
@@ -3535,9 +3613,9 @@ function printOrderMemo(orderId){
 
   const container = document.getElementById('printMemoContainer');
   container.innerHTML = memoHtml;
-  container.classList.remove('hidden');
+  if(container) container.classList.remove('hidden');
   window.print();
-  container.classList.add('hidden');
+  if(container) container.classList.add('hidden');
 }
 
 // USER & BLOCK CONTROL
@@ -3767,12 +3845,14 @@ function subscribeSupabaseChanges(){
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_theme_settings' }, async () => {
       await loadShopThemeFromCloud(); render();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_orders' }, async () => {
+      if(isAdmin){
+        await loadOrdersFromCloud();
+      } else {
+        await refreshCustomerOrderStatuses();
+      }
     });
-  if(isAdmin){
-    supabaseChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'shop_orders' }, async () => {
-      await loadOrdersFromCloud();
-    });
-  }
   supabaseChannel.subscribe();
 }
 
@@ -3818,25 +3898,31 @@ async function refreshCustomerOrderStatuses(){
   if(!cloudReady) return;
   const userPhone = localStorage.getItem('userPhone');
   if(!userPhone) return;
-  const mine = orders.filter(o => String(o.phone) === String(userPhone) && o.accessToken);
+  const mine = orders.filter(o => String(o.phone || '') === String(userPhone) && o.accessToken);
   if(!mine.length) return;
+
   let changed = false;
-  for(const order of mine){
-    const { data, error } = await supabaseClient.rpc('get_shop_order_status', {
-      p_order_id: String(order.orderId),
-      p_access_token: order.accessToken
-    });
-    if(error){
-      console.warn('Order status refresh failed:', error.message);
-      continue;
+  const promises = mine.map(async (order) => {
+    try {
+      const { data, error } = await supabaseClient.rpc('get_shop_order_status', {
+        p_order_id: String(order.orderId),
+        p_access_token: order.accessToken
+      });
+      if(!error && data && data.status){
+        if(order.status !== data.status || order.cancelReason !== (data.cancelReason || '') || order.isCompleted !== !!data.isCompleted){
+          order.status = data.status;
+          order.cancelReason = data.cancelReason || '';
+          order.isCompleted = !!data.isCompleted;
+          changed = true;
+        }
+      }
+    } catch(err) {
+      console.warn('Status refresh error for', order.orderId, err);
     }
-    if(data && data.status){
-      order.status = data.status;
-      order.cancelReason = data.cancelReason || '';
-      order.isCompleted = !!data.isCompleted;
-      changed = true;
-    }
-  }
+  });
+
+  await Promise.all(promises);
+
   if(changed){
     localStorage.setItem('orders', JSON.stringify(orders));
     renderCustomerOrders();
@@ -3952,4 +4038,4 @@ syncNavigationUI();
 
 </body>
 
-  </html>
+          </html>
