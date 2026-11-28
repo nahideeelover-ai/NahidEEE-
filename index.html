@@ -546,7 +546,91 @@ button:hover{
   font-weight: bold;
 }
 
+
+/* UNIFIED CUSTOM DIALOG STYLES */
+.custom-dialog-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+}
+.custom-dialog-card {
+  background: #141418;
+  border: 1px solid var(--gold);
+  border-radius: 14px;
+  max-width: 420px;
+  width: 100%;
+  padding: 22px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(212,175,55,0.25);
+  animation: dialogPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  color: var(--text);
+  font-family: inherit;
+}
+@keyframes dialogPop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.custom-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.custom-dialog-icon {
+  font-size: 24px;
+}
+.custom-dialog-icon.info { color: var(--info); }
+.custom-dialog-icon.success { color: var(--success); }
+.custom-dialog-icon.warning { color: var(--gold); }
+.custom-dialog-icon.danger { color: var(--danger); }
+
+.custom-dialog-title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--gold);
+}
+.custom-dialog-message {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ddd;
+  margin-bottom: 20px;
+  white-space: pre-line;
+}
+.custom-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.custom-dialog-btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  min-width: 90px;
+}
+
+/* RESPONSIVE ORDER CARD ADDRESS FIX */
+.order-card, .user-card {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+.order-address-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  flex: 1 1 100%;
+}
 </style>
+
 </head>
 
 <body>
@@ -1044,6 +1128,196 @@ button:hover{
 <div id="printMemoContainer" class="hidden"></div>
 
 <script>
+
+// ==========================================
+// UNIFIED CUSTOM DIALOG LOGIC (ENTER = OK, ESC = CANCEL)
+// ==========================================
+let currentDialogResolve = null;
+
+function showCustomAlert(message, title = 'বিজ্ঞপ্তি', type = 'info') {
+  return new Promise((resolve) => {
+    const dialogModal = document.getElementById('customDialogModal');
+    const dialogTitle = document.getElementById('customDialogTitle');
+    const dialogMessage = document.getElementById('customDialogMessage');
+    const dialogIcon = document.getElementById('customDialogIcon');
+    const cancelBtn = document.getElementById('customDialogCancelBtn');
+    const okBtn = document.getElementById('customDialogOkBtn');
+
+    if(!dialogModal) {
+      alert(message);
+      resolve(true);
+      return;
+    }
+
+    dialogTitle.innerText = title;
+    dialogMessage.innerText = message;
+    cancelBtn.classList.add('hidden');
+    okBtn.innerText = 'ঠিক আছে (OK)';
+    
+    dialogIcon.className = 'custom-dialog-icon ' + (type || 'info');
+    if (type === 'danger') {
+      dialogIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+    } else if (type === 'success') {
+      dialogIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+    } else {
+      dialogIcon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+    }
+
+    dialogModal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    okBtn.focus();
+
+    const cleanup = () => {
+      dialogModal.classList.add('hidden');
+      document.body.classList.remove('modal-open');
+      window.removeEventListener('keydown', handleKeyDown);
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      currentDialogResolve = null;
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        cleanup();
+        resolve(true);
+      }
+    };
+
+    okBtn.onclick = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    currentDialogResolve = resolve;
+  });
+}
+
+function showCustomConfirm(message, title = 'নিশ্চিতকরণ', type = 'warning') {
+  return new Promise((resolve) => {
+    const dialogModal = document.getElementById('customDialogModal');
+    const dialogTitle = document.getElementById('customDialogTitle');
+    const dialogMessage = document.getElementById('customDialogMessage');
+    const dialogIcon = document.getElementById('customDialogIcon');
+    const cancelBtn = document.getElementById('customDialogCancelBtn');
+    const okBtn = document.getElementById('customDialogOkBtn');
+
+    if(!dialogModal) {
+      const res = confirm(message);
+      resolve(res);
+      return;
+    }
+
+    dialogTitle.innerText = title;
+    dialogMessage.innerText = message;
+    cancelBtn.classList.remove('hidden');
+    cancelBtn.innerText = 'বাতিল (Cancel)';
+    okBtn.innerText = 'হ্যাঁ, নিশ্চিত (Confirm)';
+    
+    dialogIcon.className = 'custom-dialog-icon ' + (type || 'warning');
+    if (type === 'danger') {
+      dialogIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+    } else {
+      dialogIcon.innerHTML = '<i class="fa-solid fa-circle-question"></i>';
+    }
+
+    dialogModal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    okBtn.focus();
+
+    const cleanup = () => {
+      dialogModal.classList.add('hidden');
+      document.body.classList.remove('modal-open');
+      window.removeEventListener('keydown', handleKeyDown);
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      currentDialogResolve = null;
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        cleanup();
+        resolve(true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cleanup();
+        resolve(false);
+      }
+    };
+
+    okBtn.onclick = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    cancelBtn.onclick = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    currentDialogResolve = resolve;
+  });
+}
+
+// Global window.alert override for drop-in dialog replacement
+window.alert = function(msg) {
+  showCustomAlert(String(msg || ''));
+};
+
+async function loadShopThemeFromCloud() {
+  if (!cloudReady) return;
+  try {
+    const { data, error } = await supabaseClient.from('shop_theme_settings').select('setting_value').eq('setting_key', 'shopThemeSettings').maybeSingle();
+    if (!error && data && data.setting_value) {
+      shopThemeSettings = data.setting_value;
+      localStorage.setItem('shopThemeSettings', JSON.stringify(shopThemeSettings));
+      applyThemeSettings(shopThemeSettings);
+      populateThemeFieldsInAdmin();
+      return;
+    }
+  } catch(e) {
+    console.log('shop_theme_settings fetch fallback to shop_settings');
+  }
+
+  try {
+    const { data, error } = await supabaseClient.from('shop_settings').select('setting_value').eq('setting_key', 'shopThemeSettings').maybeSingle();
+    if (!error && data && data.setting_value) {
+      shopThemeSettings = data.setting_value;
+      localStorage.setItem('shopThemeSettings', JSON.stringify(shopThemeSettings));
+      applyThemeSettings(shopThemeSettings);
+      populateThemeFieldsInAdmin();
+    }
+  } catch(err) {
+    console.error('Theme load error:', err);
+  }
+}
+
+async function syncThemeToCloud(themeData) {
+  if (!cloudReady || !isAdmin) return;
+  try {
+    await supabaseClient.from('shop_theme_settings').upsert({
+      id: 'main',
+      setting_key: 'shopThemeSettings',
+      setting_value: themeData,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+  } catch(e) {
+    console.warn('Sync to shop_theme_settings fallback:', e);
+  }
+
+  try {
+    await supabaseClient.from('shop_settings').upsert({
+      setting_key: 'shopThemeSettings',
+      setting_value: themeData
+    }, { onConflict: 'setting_key' });
+  } catch(e) {
+    console.warn('Sync to shop_settings fallback:', e);
+  }
+}
+
 // ==========================================
 // FEATURE 4, 5, 6, 7 ENHANCEMENTS
 // ==========================================
@@ -1345,10 +1619,10 @@ function selectCurrentSliderVariant() {
       selectedImage: chosenMedia
     };
     selectedCart.push(cartItem);
-    alert(`প্রোডাক্ট '${prod.name}'${mediaNameStr}-এর এই নির্দিষ্ট ছবি/ডিজাইনটি আপনার চয়েজে যোগ করা হয়েছে!`);
+    showCustomAlert(`প্রোডাক্ট '${prod.name}'${mediaNameStr}-এর এই নির্দিষ্ট ছবি/ডিজাইনটি আপনার চয়েজে যোগ করতে চাইলে ok or enter press করুন, এবং back button press করে বের হয়ে চেকআউট করুন  !`, 'ছবি নির্বাচন সম্পন্ন', 'success');
   } else {
     cartItem.qty = (cartItem.qty || 1) + 1;
-    alert(`প্রোডাক্ট '${prod.name}'${mediaNameStr}-এর এই নির্দিষ্ট ছবি/ডিজাইনটির পরিমাণ বাড়ানো হয়েছে (মোট: ${cartItem.qty} টি)।`);
+    showCustomAlert(`প্রোডাক্ট '${prod.name}'${mediaNameStr}-এর এই নির্দিষ্ট ছবি/ডিজাইনটির পরিমাণ বাড়ানো হয়েছে (মোট: ${cartItem.qty} টি)।`, 'পরিমাণ বৃদ্ধি', 'info');
   }
 
   updateCartBar();
@@ -1886,8 +2160,8 @@ function login(){
 }
 
 // LOGOUT CUSTOMER
-function customerLogout(){
-  if(confirm('আপনি কি নিশ্চিত যে কাস্টমার অ্যাকাউন্ট থেকে লগআউট করতে চান?')){
+async function customerLogout(){
+  if(await showCustomConfirm('আপনি কি নিশ্চিত যে কাস্টমার অ্যাকাউন্ট থেকে লগআউট করতে চান?', 'কাস্টমার লগআউট')){
     localStorage.removeItem('userPhone');
     selectedCart = [];
     updateCartBar();
@@ -2393,7 +2667,7 @@ async function adminLogin(){
 }
 
 async function adminLogout(){
-  if(confirm('আপনি কি এডমিন ড্যাশবোর্ড থেকে লগআউট করতে চান?')){
+  if(await showCustomConfirm('আপনি কি এডমিন ড্যাশবোর্ড থেকে লগআউট করতে চান?', 'এডমিন লগআউট')){
     if(supabaseClient) await supabaseClient.auth.signOut();
     isAdmin = false;
     
@@ -2843,7 +3117,7 @@ function editProduct(id){
 }
 
 async function deleteProduct(id){
-  if(confirm('আপনি কি নিশ্চিত যে এই পণ্যটি মুছে ফেলতে চান?')){
+  if(await showCustomConfirm('আপনি কি নিশ্চিত যে এই পণ্যটি মুছে ফেলতে চান?', 'পণ্য মুছে ফেলা', 'danger')){
     products = products.filter(p => String(p.id) !== String(id));
     localStorage.setItem('products', JSON.stringify(products));
     if(cloudReady && isAdmin){
@@ -2904,7 +3178,7 @@ function renderOrders(){
       <div><strong>গ্রাহক:</strong> ${ord.name} (${ord.phone})</div>
       
       <div style="margin:6px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span><strong>ঠিকানা:</strong> ${ord.address}</span>
+        <span class="order-address-text"><strong>ঠিকানা:</strong> ${ord.address}</span>
         <a href="${mapsUrl}" target="_blank" class="btn-info" style="display:inline-flex;align-items:center;gap:6px;width:auto;padding:4px 12px;font-size:12px;text-decoration:none;border-radius:6px;margin:0;">
           <i class="fa-solid fa-map-location-dot"></i> ম্যাপ নেভিগেশন (Google Maps)
         </a>
@@ -2979,7 +3253,7 @@ async function completeOrder(orderId){
     return;
   }
 
-  if(confirm(`আপনি কি নিশ্চিত যে অর্ডার (${orderId}) টি কমপ্লিট হিসেবে চিহ্নিত করতে চান?\n\nএর ফলে প্রোডাক্টের স্টক থেকে অটোমেটিক পরিমাণ বিয়োগ হবে এবং বিক্রি সংখ্যা বৃদ্ধি পাবে।`)){
+  if(await showCustomConfirm(`আপনি কি নিশ্চিত যে অর্ডার (${orderId}) টি কমপ্লিট হিসেবে চিহ্নিত করতে চান?\n\nএর ফলে প্রোডাক্টের স্টক থেকে অটোমেটিক পরিমাণ বিয়োগ হবে এবং বিক্রি সংখ্যা বৃদ্ধি পাবে।`, 'অর্ডার কমপ্লিট')){
     ord.isCompleted = true;
     ord.status = 'ডেলিভারড (Delivered)';
 
@@ -3027,7 +3301,7 @@ async function completeOrder(orderId){
 }
 
 async function deleteOrder(orderId){
-  if(!confirm(`আপনি কি নিশ্চিত যে অর্ডারটি (${orderId}) স্থায়ীভাবে Supabase থেকে মুছে ফেলতে চান?`)) return;
+  if(!await showCustomConfirm(`আপনি কি নিশ্চিত যে অর্ডারটি (${orderId}) স্থায়ীভাবে Supabase থেকে মুছে ফেলতে চান?`, 'অর্ডার স্থায়ীভাবে ডিলিট', 'danger')) return;
   if(!cloudReady || !isAdmin){
     alert('ক্লাউডে স্থায়ীভাবে মুছতে অ্যাডমিন লগইন ও ক্লাউড সংযোগ প্রয়োজন।');
     return;
@@ -3463,6 +3737,7 @@ async function loadOrdersFromCloud(){
 
 async function loadShopSettingsFromCloud(){
   if(!cloudReady) return;
+  await loadShopThemeFromCloud();
   const { data, error } = await supabaseClient.from('shop_settings').select('setting_key,setting_value');
   if(error){ console.error('Settings load failed:', error.message); return; }
   (data || []).forEach(row => {
@@ -3489,6 +3764,9 @@ function subscribeSupabaseChanges(){
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_settings' }, async () => {
       await loadShopSettingsFromCloud(); render();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_theme_settings' }, async () => {
+      await loadShopThemeFromCloud(); render();
     });
   if(isAdmin){
     supabaseChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'shop_orders' }, async () => {
@@ -3654,5 +3932,24 @@ syncNavigationUI();
   <span>(Back)</span>
 </div>
 
+
+<!-- UNIFIED CUSTOM DIALOG / MODAL SYSTEM -->
+<div id="customDialogModal" class="custom-dialog-overlay hidden">
+  <div class="custom-dialog-card" role="dialog" aria-modal="true">
+    <div class="custom-dialog-header">
+      <div id="customDialogIcon" class="custom-dialog-icon">
+        <i class="fa-solid fa-circle-info"></i>
+      </div>
+      <h3 id="customDialogTitle" class="custom-dialog-title">বিজ্ঞপ্তি</h3>
+    </div>
+    <div id="customDialogMessage" class="custom-dialog-message"></div>
+    <div class="custom-dialog-actions">
+      <button id="customDialogCancelBtn" class="btn-secondary custom-dialog-btn hidden">বাতিল (Cancel)</button>
+      <button id="customDialogOkBtn" class="btn-gold custom-dialog-btn" style="background:var(--gold);color:#000;">ঠিক আছে (OK)</button>
+    </div>
+  </div>
+</div>
+
 </body>
-            </html>
+
+  </html>
